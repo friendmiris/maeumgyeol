@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>마음결 · AI 대화 성향 분석</title>
+<style>
+  @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css');
+  @import url('https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap');
+
+  :root{
+    /* lavender-pink dream palette (from reference) */
+    --bg:#EFE3F2;            /* page behind device */
+    --wash1:#F6E7F2;         /* top wash */
+    --wash2:#E9DCF5;         /* bottom wash */
+    --paper:#FFFFFF;
+    --card:#FBF4FB;
+    --ink:#5B4A6B;           /* soft plum text */
+    --ink-strong:#4A3A5C;
+    --muted:#9A8BAA;
+    --faint:#BCB0C8;
+    --line:#EBDEEE;
+    --line2:#F0E6F3;
+    /* accents */
+    --grape:#B27CD6;         /* primary purple */
+    --grape-deep:#9B5FC4;
+    --pink:#E59CC4;          /* primary pink */
+    --pink-deep:#D87BAE;
+    --lilac:#C9A8E8;
+    --mint:#A8D8C8;
+    --peach:#F3C6B8;
+    --butter:#F5E0A8;
+    --grad:linear-gradient(135deg,#E59CC4 0%,#B27CD6 100%);
+    --grad-soft:linear-gradient(135deg,#F3D4E6 0%,#DCC6F0 100%);
+    --grad-btn:linear-gradient(100deg,#EBA6CC 0%,#C089DD 55%,#A87EDB 100%);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  /* 한국어 단어 단위 줄바꿈: '학교입니/다' 같은 글자 단위 분리 방지 */
+  *{word-break:keep-all; overflow-wrap:break-word;}
+  html,body{height:100%;}
+  body{
+    font-family:'Pretendard','Pretendard Variable',-apple-system,sans-serif;
+    background:radial-gradient(120% 80% at 20% 0%, #F3E4F1 0%, #E7DAF3 55%, #E0D4F0 100%);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    display:flex; flex-direction:column; align-items:center;
+    min-height:100vh; padding:22px 12px 40px; line-height:1.6;
+    word-break:keep-all; overflow-wrap:break-word;
+  }
+  .serif{font-family:'Gowun Batang',serif;}
+
+  /* ===== device ===== */
+  .device{
+    width:100%; max-width:412px;
+    background:linear-gradient(180deg,#FBF1F8 0%,#F3E8F8 100%);
+    border-radius:34px; overflow:hidden;
+    border:1px solid #E6D6EC;
+    box-shadow:0 34px 80px -26px rgba(120,80,150,.45), 0 2px 0 rgba(255,255,255,.7) inset;
+    position:relative; display:flex; flex-direction:column;
+    height:min(840px, calc(100vh - 110px)); min-height:560px;
+  }
+  .screen{display:none; flex-direction:column; flex:1; min-height:0;
+    animation:rise .5s cubic-bezier(.2,.7,.3,1);}
+  .screen.active{display:flex; overflow-y:auto; -webkit-overflow-scrolling:touch;}
+  .screen[data-screen="chat"].active{overflow:hidden;}
+  @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  @media (prefers-reduced-motion: reduce){ *{animation:none !important; transition:none !important;} }
+
+  @media (max-width:480px){
+    body{padding:14px 8px 30px;}
+    .device{height:auto; min-height:calc(100vh - 44px); overflow:visible;}
+    .screen.active{overflow:visible;}
+    .screen[data-screen="chat"].active{min-height:calc(100vh - 44px); overflow:hidden;}
+  }
+
+  button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit;}
+  input,textarea{font-family:inherit;}
+
+  /* sparkles bg layer */
+  .sky{position:absolute; inset:0; pointer-events:none; overflow:hidden;}
+  .sky .sp{position:absolute; color:#E9C6E6; opacity:.7; font-size:12px; animation:tw 4s ease-in-out infinite;}
+  @keyframes tw{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:.9;transform:scale(1.1)}}
+
+  /* pill button */
+  .cta{
+    width:100%; padding:17px; border-radius:50px;
+    background:var(--grad-btn); color:#fff; font-size:16px; font-weight:700; letter-spacing:.3px;
+    box-shadow:0 14px 30px -10px rgba(176,110,210,.7); transition:transform .15s, box-shadow .2s;
+    display:flex; align-items:center; justify-content:center; gap:9px;
+  }
+  .cta:hover{transform:translateY(-2px); box-shadow:0 20px 36px -12px rgba(176,110,210,.8);}
+  .cta:active{transform:scale(.99);}
+  .cta.ghost{background:rgba(255,255,255,.7); color:var(--grape-deep); box-shadow:none; border:1.5px solid #EAD9EF;}
+  .cta.ghost:hover{background:#fff;}
+  .cta:disabled{opacity:.5; box-shadow:none; cursor:not-allowed; transform:none;}
+
+  .glow{border-radius:50%;
+    background:radial-gradient(circle at 38% 33%, #fff 0%, #F4D3EC 28%, #D9A8E6 62%, #B98BD8 100%);
+    box-shadow:0 16px 40px -10px rgba(180,120,210,.6), 0 0 0 12px rgba(225,195,235,.25), 0 0 0 26px rgba(225,195,235,.12);}
+
+  .badge{
+    display:inline-flex; align-items:center; gap:7px; font-size:12px; font-weight:600; letter-spacing:.2px;
+    color:var(--grape-deep); background:rgba(255,255,255,.8); border:1px solid #EBD6EF;
+    padding:8px 16px; border-radius:50px;
+  }
+
+  /* ============ LANDING ============ */
+  .landing{flex:1; display:flex; flex-direction:column; align-items:center; text-align:center;
+    padding:42px 28px 30px; position:relative;}
+  .landing .badge{margin-bottom:30px;}
+  .landing .glow{width:104px; height:104px; margin-bottom:30px; animation:float 5s ease-in-out infinite;}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+  .ttl{font-family:'Gowun Batang',serif; font-size:34px; font-weight:700; line-height:1.34; letter-spacing:-.5px;
+    background:linear-gradient(120deg,#C77BC4 0%,#9B6FD6 60%,#8A7BE0 100%);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;}
+  .sub{font-size:14.5px; color:var(--ink); opacity:.82; margin-top:18px; line-height:1.85;}
+  .countpill{display:inline-flex; align-items:center; gap:8px; font-size:13px; color:var(--muted);
+    background:rgba(255,255,255,.78); border:1px solid #EEDFEF; padding:10px 18px; border-radius:50px; margin-top:26px;}
+  .countpill b{color:var(--grape-deep); font-weight:700;}
+  .landing .cta{margin-top:18px;}
+  .lfoot{font-size:11.5px; color:var(--faint); margin-top:18px; line-height:1.7;}
+
+  /* ============ CHAT ============ */
+  .chead{display:flex; align-items:center; gap:11px; padding:16px 18px; border-bottom:1px solid var(--line);
+    background:rgba(255,255,255,.55); backdrop-filter:blur(6px);}
+  .chead .ava{width:34px; height:34px; border-radius:50%;
+    background:radial-gradient(circle at 38% 33%,#fff,#EEC6E8 45%,#C49BE0); box-shadow:0 4px 12px -4px rgba(180,120,210,.6);}
+  .chead .nm{font-family:'Gowun Batang',serif; font-size:15px; font-weight:700; color:var(--ink-strong);}
+  .chead .st{font-size:11px; color:var(--faint); display:flex; align-items:center; gap:5px; margin-top:1px;}
+  .pulse{width:6px; height:6px; border-radius:50%; background:var(--mint); box-shadow:0 0 0 0 rgba(168,216,200,.7); animation:pulse 2s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(168,216,200,.5)}70%{box-shadow:0 0 0 7px rgba(168,216,200,0)}100%{box-shadow:0 0 0 0 rgba(168,216,200,0)}}
+  .back{margin-left:auto; font-size:12.5px; color:var(--muted); padding:5px;}
+
+  .prail{height:3px; background:var(--line);}
+  .prail>i{display:block; height:100%; width:0; background:var(--grad); transition:width .5s ease;}
+
+  .chat{flex:1; padding:18px 16px; display:flex; flex-direction:column; gap:13px; overflow-y:auto;}
+  .row{display:flex; gap:9px; align-items:flex-end; max-width:88%;}
+  .row.me{align-self:flex-end; flex-direction:row-reverse;}
+  .ai-ava{width:28px; height:28px; border-radius:50%; flex-shrink:0;
+    background:radial-gradient(circle at 38% 33%,#fff,#EEC6E8 45%,#C49BE0);}
+  .bub-a{background:var(--paper); border:1px solid var(--line); color:var(--ink); padding:12px 15px;
+    border-radius:18px 18px 18px 5px; font-size:14px; line-height:1.65; box-shadow:0 2px 8px -4px rgba(150,110,180,.18);}
+  .bub-m{background:var(--grad-btn); color:#fff; padding:12px 15px; border-radius:18px 18px 5px 18px;
+    font-size:14px; line-height:1.65; box-shadow:0 8px 18px -8px rgba(176,110,210,.6);}
+  .typing{display:flex; gap:4px; padding:14px 16px;}
+  .typing span{width:6px; height:6px; border-radius:50%; background:var(--lilac); animation:blink 1.3s infinite;}
+  .typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+
+  .replies{padding:0 16px 16px;}
+  .rhint{font-size:11px; color:var(--faint); margin:2px 0 9px 3px;}
+  .opt{display:block; width:100%; text-align:left; background:var(--paper); border:1.5px solid var(--line);
+    color:var(--ink); padding:13px 15px; border-radius:16px; font-size:14px; margin-bottom:9px; transition:all .16s;}
+  .opt:hover{border-color:var(--grape); transform:translateY(-2px); box-shadow:0 10px 20px -10px rgba(176,110,210,.5);}
+  .opt .lead{font-weight:600; color:var(--ink-strong);}
+  .opt .sub2{display:block; font-size:11.5px; color:var(--faint); margin-top:3px;}
+  .typebar{display:flex; align-items:center; gap:8px; margin-top:4px; background:var(--paper);
+    border:1.5px solid var(--line); border-radius:24px; padding:5px 5px 5px 16px;}
+  .typebar input{flex:1; border:none; outline:none; font-size:13.5px; color:var(--ink); background:transparent;}
+  .typebar input::placeholder{color:var(--faint);}
+  .send{width:38px; height:38px; border-radius:50%; background:var(--grad-btn); color:#fff;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .send svg{width:17px; height:17px;}
+
+  /* ============ LOADING ============ */
+  .loading{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:26px; padding:30px; text-align:center;}
+  .load-orb{position:relative; width:130px; height:130px; display:flex; align-items:center; justify-content:center;}
+  .load-orb svg{position:absolute; transform:rotate(-90deg);}
+  .load-orb .glow{width:62px; height:62px;}
+  .load-t{font-family:'Gowun Batang',serif; font-size:17px; color:var(--ink-strong);}
+  .load-s{font-size:13px; color:var(--muted); max-width:240px; line-height:1.7;}
+  .load-steps{display:flex; flex-direction:column; gap:9px; width:100%; max-width:250px; margin-top:4px;}
+  .lstep{display:flex; align-items:center; gap:10px; font-size:12.5px; color:var(--faint); transition:color .4s;}
+  .lstep.on{color:var(--ink);}
+  .lstep .tick{width:17px; height:17px; border-radius:50%; border:1.5px solid var(--line); flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:10px; transition:all .4s;}
+  .lstep.on .tick{background:var(--grape); border-color:var(--grape); color:#fff;}
+
+  /* ============ RESULT ============ */
+  .r-hero{padding:32px 24px 26px; text-align:center; position:relative;
+    background:radial-gradient(120% 90% at 50% 0%, #F6E0F0 0%, transparent 70%); border-bottom:1px solid var(--line);}
+  .r-hero .glow{width:78px; height:78px; margin:0 auto 16px;}
+  .r-kicker{font-size:11px; letter-spacing:2px; color:var(--grape-deep); text-transform:uppercase; margin-bottom:4px;}
+  .r-type{font-family:'Gowun Batang',serif; font-size:27px; font-weight:700; line-height:1.3; letter-spacing:-.5px;
+    background:linear-gradient(120deg,#C77BC4,#9168D6); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;}
+  .r-type small{display:block; font-size:12px; color:var(--muted); font-weight:400; margin-top:7px; letter-spacing:1.5px;
+    font-family:'Pretendard',sans-serif; -webkit-text-fill-color:var(--muted);}
+  .r-tags{display:flex; gap:6px; justify-content:center; flex-wrap:wrap; margin-top:14px;}
+  .r-tag{font-size:11px; background:rgba(255,255,255,.8); border:1px solid var(--line); color:var(--ink); padding:6px 13px; border-radius:50px;}
+  .r-rare{display:inline-flex; align-items:center; gap:6px; font-size:11px; color:var(--grape-deep);
+    background:rgba(255,255,255,.7); border:1px solid #EBD6EF; padding:6px 14px; border-radius:50px; margin-top:14px;}
+
+  .r-body{padding:24px 18px 8px;}
+  .sec{margin-bottom:28px;}
+  .sec-label{display:flex; align-items:center; gap:9px; margin-bottom:15px;}
+  .sec-label .no{font-size:12px; color:#fff; background:var(--grad); width:24px; height:24px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; font-weight:700; box-shadow:0 5px 12px -4px rgba(176,110,210,.6);}
+  .sec-label .tt{font-family:'Gowun Batang',serif; font-size:16px; font-weight:700; color:var(--ink-strong);}
+  .sec-label .en{font-size:10px; letter-spacing:2px; color:var(--faint); text-transform:uppercase; margin-left:auto;}
+
+  .narr{font-size:14px; color:var(--ink); line-height:1.95; letter-spacing:-.1px;}
+  .narr p{margin-bottom:13px;}
+  .narr .pull{font-family:'Gowun Batang',serif; font-size:16px; color:var(--grape-deep); line-height:1.7;
+    border-left:3px solid var(--pink); padding:4px 0 4px 14px; margin:16px 0;}
+  .narr b{color:var(--grape-deep); font-weight:600;}
+
+  .score{margin-bottom:18px;}
+  .score-top{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:7px;}
+  .score-nm{font-size:13.5px; font-weight:600; color:var(--ink-strong);}
+  .score-nm .lab{display:block; font-size:11px; color:var(--muted); font-weight:400; margin-top:1px;}
+  .score-vv{font-family:'Gowun Batang',serif; font-size:17px; color:var(--grape-deep);}
+  .score-rail{height:9px; background:#F0E5F2; border-radius:6px; overflow:hidden;}
+  .score-rail>i{display:block; height:100%; width:0; border-radius:6px; transition:width 1.1s cubic-bezier(.2,.7,.3,1);}
+  .score-meta{font-size:11px; color:var(--faint); margin-top:6px; line-height:1.6;}
+
+  .adjust-card{background:var(--card); border:1px solid var(--line); border-radius:18px; padding:16px 16px 6px;}
+  .adjust-intro{font-size:12px; color:var(--muted); line-height:1.6; margin-bottom:16px;}
+  .adjust-intro b{color:var(--ink);}
+  .slot{margin-bottom:18px;}
+  .slot-top{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;}
+  .slot-nm{font-size:13px; font-weight:600; color:var(--ink-strong);}
+  .slot-nm .d{display:block; font-size:10.5px; color:var(--faint); font-weight:400; margin-top:1px;}
+  .slot-val{font-family:'Gowun Batang',serif; font-size:16px; color:var(--grape-deep); min-width:34px; text-align:right;}
+  input[type=range]{-webkit-appearance:none; appearance:none; width:100%; height:6px; border-radius:4px;
+    background:linear-gradient(90deg,var(--grape) 0%,var(--grape) 50%,#EBDEF0 50%); outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; appearance:none; width:22px; height:22px; border-radius:50%;
+    background:#fff; border:2px solid var(--grape); box-shadow:0 2px 8px rgba(176,110,210,.45); cursor:pointer; transition:transform .12s;}
+  input[type=range]::-webkit-slider-thumb:active{transform:scale(1.15);}
+  input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#fff;border:2px solid var(--grape);cursor:pointer;}
+  .recalc{width:100%; padding:12px; border-radius:14px; background:var(--grad-btn); color:#fff;
+    font-size:13px; font-weight:700; margin-bottom:6px; display:flex; align-items:center; justify-content:center; gap:7px;
+    box-shadow:0 10px 22px -10px rgba(176,110,210,.6);}
+
+  .sit{display:flex; gap:13px; padding:15px; background:var(--paper); border:1px solid var(--line); border-radius:16px; margin-bottom:11px;}
+  .sit .ic{width:42px; height:42px; border-radius:13px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:20px;}
+  .sit .h{font-size:13.5px; font-weight:600; color:var(--ink-strong); margin-bottom:5px;}
+  .sit .b{font-size:12.5px; color:var(--ink); opacity:.85; line-height:1.75;}
+
+  .grow{display:flex; gap:12px; padding:14px 0; border-bottom:1px dashed var(--line);}
+  .grow:last-child{border-bottom:none;}
+  .grow .n{font-family:'Gowun Batang',serif; font-size:15px; color:var(--grape); flex-shrink:0; width:22px; line-height:1.4;}
+  .grow .gh{font-size:13.5px; font-weight:600; color:var(--ink-strong); margin-bottom:4px;}
+  .grow .gb{font-size:12.5px; color:var(--ink); opacity:.85; line-height:1.75;}
+  .grow .try{font-size:11.5px; color:var(--grape-deep); margin-top:6px; display:inline-flex; align-items:center; gap:5px; font-weight:600;}
+
+  .r-foot{padding:6px 18px 24px;}
+  .divider{display:flex; align-items:center; gap:12px; margin:8px 0 20px; color:var(--faint); font-size:11px; letter-spacing:1px;}
+  .divider:before,.divider:after{content:''; flex:1; height:1px; background:var(--line);}
+
+  /* ============ SESSION INTRO ============ */
+  .ses-hero{padding:30px 24px 26px; text-align:center; position:relative;
+    background:linear-gradient(180deg,#F0DBEF 0%,#E6D7F4 100%); border-bottom:1px solid var(--line2);}
+  .ses-hero .glow{width:64px; height:64px; margin:0 auto 16px;}
+  .ses-hero h2{font-family:'Gowun Batang',serif; font-size:23px; font-weight:700; color:var(--grape-deep);}
+  .ses-hero .meta{font-size:12.5px; color:var(--muted); margin-top:8px; letter-spacing:.5px;}
+  .ses-body{padding:22px 20px 8px;}
+  .step{display:flex; gap:14px; align-items:flex-start; padding:14px 0; border-bottom:1px solid var(--line2);}
+  .step:last-of-type{border-bottom:none;}
+  .step .num{width:26px; height:26px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:700; color:#fff;}
+  .step .sh{font-size:14px; font-weight:600; color:var(--ink-strong);}
+  .step .se{font-size:11px; color:var(--faint); letter-spacing:.5px; margin-top:2px;}
+  .ses-note{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px; margin-top:8px;}
+  .ses-note .nh{font-size:13px; font-weight:700; color:var(--grape-deep); display:flex; align-items:center; gap:7px; margin-bottom:7px;}
+  .ses-note .nb{font-size:12.5px; color:var(--ink); opacity:.85; line-height:1.8;}
+  .ses-foot{padding:18px 20px 24px;}
+  .ses-disc{font-size:11px; color:var(--faint); text-align:center; margin-top:14px; line-height:1.6;}
+
+  /* expanded session content */
+  .ses-lede{font-size:13.5px; color:var(--ink); line-height:1.95; padding:20px 20px 4px;}
+  .ses-lede b{color:var(--grape-deep); font-weight:600;}
+  .ses-sechead{display:flex; align-items:center; gap:9px; padding:8px 20px 0; margin-top:18px;}
+  .ses-sechead .sno{font-size:11px; color:#fff; background:var(--grad); width:22px; height:22px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; font-weight:700;}
+  .ses-sechead .stt{font-family:'Gowun Batang',serif; font-size:15px; font-weight:700; color:var(--ink-strong);}
+  .step .sd{font-size:11.5px; color:var(--ink); opacity:.78; margin-top:4px; line-height:1.7;}
+  /* solution cards: book / discussion / talk */
+  .solwrap{padding:14px 20px 4px; display:flex; flex-direction:column; gap:11px;}
+  .sol{display:flex; gap:13px; padding:15px; border-radius:16px; border:1px solid var(--line); background:var(--paper);}
+  .sol .si{width:46px; height:46px; border-radius:13px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:22px;}
+  .sol .sht{font-size:14px; font-weight:700; color:var(--ink-strong); display:flex; align-items:center; gap:7px;}
+  .sol .sht .pill{font-size:9.5px; font-weight:600; color:var(--grape-deep); background:#F3E6F4; border:1px solid #EBD6EF; padding:2px 8px; border-radius:50px;}
+  .sol .sbd{font-size:12px; color:var(--ink); opacity:.85; line-height:1.75; margin-top:5px;}
+  .sol .sbd em{font-style:normal; color:var(--grape-deep); font-weight:600;}
+  /* info chips */
+  .ses-info{padding:14px 20px 0; display:grid; grid-template-columns:1fr 1fr; gap:9px;}
+  .ses-info .ich{background:var(--card); border:1px solid var(--line); border-radius:13px; padding:12px 14px;}
+  .ses-info .ich .il{font-size:10.5px; color:var(--muted); margin-bottom:4px;}
+  .ses-info .ich .iv{font-size:13px; font-weight:700; color:var(--ink-strong);}
+  .ses-info .ich .iv small{font-size:11px; font-weight:400; color:var(--muted);}
+  /* testimonial */
+  .ses-quote{margin:16px 20px 0; padding:16px 18px; border-radius:16px; background:linear-gradient(160deg,#F6E7F2,#EEE0F6);
+    border:1px solid var(--line);}
+  .ses-quote .qt{font-family:'Gowun Batang',serif; font-size:13.5px; color:var(--ink-strong); line-height:1.8;}
+  .ses-quote .qw{font-size:11px; color:var(--muted); margin-top:9px;}
+
+  /* ============ APPLY FORM ============ */
+  .apply-hero{padding:26px 24px 20px; text-align:center; position:relative;
+    background:radial-gradient(120% 90% at 50% 0%, #F4DCEE 0%, transparent 72%);}
+  .apply-hero .glow{width:54px; height:54px; margin:0 auto 14px;}
+  .apply-hero h2{font-family:'Gowun Batang',serif; font-size:21px; font-weight:700; color:var(--grape-deep);}
+  .apply-hero p{font-size:12.5px; color:var(--muted); margin-top:6px;}
+  .form{padding:6px 20px 8px;}
+  .field{margin-bottom:20px;}
+  .field>label{display:block; font-size:13px; font-weight:600; color:var(--ink-strong); margin-bottom:9px;}
+  .field>label .ic{margin-right:5px;}
+  .field>label .multi{font-size:11px; color:var(--faint); font-weight:400; margin-left:5px;}
+  .inp{width:100%; padding:14px 16px; border-radius:14px; border:1.5px solid var(--line); background:var(--paper);
+    font-size:14px; color:var(--ink-strong); outline:none; transition:border .2s, box-shadow .2s;}
+  .inp::placeholder{color:var(--faint);}
+  .inp:focus{border-color:var(--grape); box-shadow:0 0 0 4px rgba(176,110,210,.12);}
+  .cal{display:grid; grid-template-columns:repeat(7,1fr); gap:6px;}
+  .cal-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;}
+  .cal-title{font-family:'Gowun Batang',serif; font-size:15px; font-weight:700; color:var(--ink-strong);}
+  .cal-nav{width:34px; height:34px; border-radius:10px; border:1.5px solid var(--line); background:var(--paper);
+    color:var(--grape-deep); font-size:18px; line-height:1; display:flex; align-items:center; justify-content:center; transition:all .14s;}
+  .cal-nav:hover:not(:disabled){border-color:var(--grape); background:rgba(176,110,210,.06);}
+  .cal-nav:disabled{opacity:.32; cursor:not-allowed;}
+  .cal .dow{font-size:10.5px; color:var(--faint); text-align:center; padding-bottom:2px;}
+  .cal .day{aspect-ratio:1/1; border-radius:12px; border:1.5px solid var(--line); background:var(--paper);
+    display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--ink); transition:all .14s; position:relative;}
+  .cal .day.empty{border:none; background:transparent; pointer-events:none;}
+  .cal .day:hover:not(.empty):not(.disabled){border-color:var(--grape);}
+  .cal .day.on{background:var(--grad); color:#fff; border-color:transparent; font-weight:700; box-shadow:0 6px 14px -6px rgba(176,110,210,.6);}
+  .cal .day.dow-sun{color:var(--pink-deep);}
+  .cal .day.disabled{color:var(--faint); opacity:.4; pointer-events:none; background:transparent; border-color:transparent;}
+  .cal .day.today:not(.on){box-shadow:inset 0 0 0 1.5px var(--grape);}
+  .cal .day.today:not(.on):after{content:''; position:absolute; bottom:5px; left:50%; transform:translateX(-50%);
+    width:4px; height:4px; border-radius:50%; background:var(--grape);}
+  .cal-picked{display:flex; flex-wrap:wrap; gap:6px; margin-top:12px;}
+  .cal-picked .chip{font-size:11px; color:var(--grape-deep); background:#F3E6F4; border:1px solid #EBD6EF;
+    padding:5px 10px; border-radius:50px; display:inline-flex; align-items:center; gap:6px;}
+  .cal-picked .chip b{font-weight:600;}
+  .cal-picked .chip .x{cursor:pointer; color:var(--faint); font-weight:700;}
+  .cal-picked .chip .x:hover{color:var(--pink-deep);}
+  .cal-picked .none{font-size:11px; color:var(--faint);}
+  .slots{display:grid; grid-template-columns:repeat(3,1fr); gap:8px;}
+  .tslot{padding:12px 6px; border-radius:13px; border:1.5px solid var(--line); background:var(--paper);
+    font-size:12.5px; color:var(--ink); text-align:center; transition:all .14s;}
+  .tslot:hover{border-color:var(--grape);}
+  .tslot.on{background:var(--grad); color:#fff; border-color:transparent; font-weight:600; box-shadow:0 6px 14px -6px rgba(176,110,210,.6);}
+  .check{display:flex; gap:10px; align-items:flex-start; margin-bottom:12px; cursor:pointer;}
+  .check .box{width:20px; height:20px; border-radius:6px; border:1.5px solid var(--faint); flex-shrink:0; margin-top:1px;
+    display:flex; align-items:center; justify-content:center; transition:all .15s; color:transparent; font-size:12px;}
+  .check.on .box{background:var(--grad); border-color:transparent; color:#fff;}
+  .check .ct{font-size:12px; color:var(--ink); line-height:1.6;}
+  .check .req{color:var(--pink-deep); font-weight:600;}
+  .form-foot{padding:8px 20px 26px;}
+
+  /* apply success */
+  .done{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; padding:40px 30px; text-align:center;}
+  .done .glow{width:84px; height:84px;}
+  .done h2{font-family:'Gowun Batang',serif; font-size:23px; color:var(--grape-deep);}
+  .done p{font-size:13.5px; color:var(--ink); opacity:.85; line-height:1.85;}
+  .done .recap{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px 18px; width:100%; text-align:left; margin-top:4px;}
+  .done .recap .rr{display:flex; justify-content:space-between; font-size:12.5px; padding:6px 0;}
+  .done .recap .rr .k{color:var(--muted);} .done .recap .rr .v{color:var(--ink-strong); font-weight:600; text-align:right; max-width:60%;}
+
+  /* ============ ADMIN ============ */
+  .admin{display:none; flex-direction:column; flex:1; min-height:0;}
+  .admin.active{display:flex; overflow-y:auto;}
+  .adm-banner{font-size:11.5px; color:#9A7B3A; background:#FBF1D6; border:1px solid #F0E0B0;
+    padding:10px 14px; border-radius:12px; margin:14px 14px 0; display:flex; align-items:center; gap:7px; line-height:1.5;}
+  .adm-head{display:flex; align-items:center; gap:11px; padding:16px 16px 12px;}
+  .adm-head .ava{width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 38% 33%,#fff,#EEC6E8 45%,#C49BE0);}
+  .adm-head .ah{font-family:'Gowun Batang',serif; font-size:16px; font-weight:700; color:var(--ink-strong);}
+  .adm-head .as{font-size:11px; color:var(--faint); margin-top:1px;}
+  .adm-head .tools{margin-left:auto; display:flex; gap:7px;}
+  .adm-head .tbtn{font-size:11.5px; padding:7px 12px; border-radius:10px; border:1px solid var(--line); background:#fff; color:var(--muted); font-weight:600;}
+  .adm-head .tbtn.pri{background:var(--grad-btn); color:#fff; border-color:transparent; box-shadow:0 6px 14px -6px rgba(176,110,210,.5);}
+  .adm-body{padding:4px 14px 24px;}
+  .kpis{display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:14px;}
+  .kpi{background:#fff; border:1px solid var(--line); border-radius:16px; padding:14px 16px;}
+  .kpi .kl{font-size:11px; color:var(--muted); margin-bottom:5px;}
+  .kpi .kv{font-family:'Gowun Batang',serif; font-size:25px; color:var(--ink-strong); font-weight:700;}
+  .kpi .kv small{font-size:13px; color:var(--muted); font-weight:400; margin-left:2px; font-family:'Pretendard',sans-serif;}
+  .kpi.accent .kv{color:var(--grape-deep);}
+  .panel{background:#fff; border:1px solid var(--line); border-radius:16px; padding:16px; margin-bottom:14px;}
+  .panel .ph{font-size:13px; font-weight:700; color:var(--ink-strong); margin-bottom:14px;}
+  .bars{display:flex; align-items:flex-end; gap:10px; height:120px; padding-top:6px;}
+  .bars .bcol{flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; height:100%; justify-content:flex-end;}
+  .bars .bar{width:60%; max-width:30px; border-radius:7px 7px 3px 3px; background:linear-gradient(180deg,#EDA6CC,#E58BBE);}
+  .bars .blab{font-size:10.5px; color:var(--muted);}
+  .hbars{display:flex; flex-direction:column; gap:10px;}
+  .hbar{display:flex; align-items:center; gap:10px; font-size:11.5px;}
+  .hbar .hl{width:48px; color:var(--muted); flex-shrink:0; text-align:right;}
+  .hbar .htrack{flex:1; height:14px; background:#F2E7F3; border-radius:8px; overflow:hidden;}
+  .hbar .hfill{height:100%; border-radius:8px; background:linear-gradient(90deg,#E59CC4,#B27CD6);}
+  .hbar .hv{width:24px; color:var(--ink-strong); font-weight:600; flex-shrink:0;}
+
+  .filters{display:flex; gap:7px; margin-bottom:12px;}
+  .fbtn{font-size:12px; padding:7px 15px; border-radius:50px; border:1px solid var(--line); background:#fff; color:var(--muted); font-weight:600;}
+  .fbtn.on{background:var(--grad-soft); color:var(--grape-deep); border-color:transparent;}
+  .tbl{background:#fff; border:1px solid var(--line); border-radius:16px; overflow:hidden;}
+  .trow{display:grid; grid-template-columns:1.5fr 1.3fr 1.1fr 0.5fr 0.7fr; gap:6px; align-items:center;
+    padding:13px 14px; border-bottom:1px solid var(--line2); font-size:12px;}
+  .trow:last-child{border-bottom:none;}
+  .trow.thd{background:#FBF5FB; font-size:10.5px; color:var(--faint); letter-spacing:.3px;}
+  .trow .who{display:flex; align-items:center; gap:8px;}
+  .trow .who .av{width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:10px; color:#fff; font-weight:700; flex-shrink:0;}
+  .trow .who .nm{font-weight:600; color:var(--ink-strong); font-size:12.5px;}
+  .trow .tel{color:var(--grape-deep); font-size:11px;}
+  .trow .pref{color:var(--ink); font-size:11px;}
+  .trow .agree{text-align:center; color:var(--mint); font-weight:700;}
+  .trow .agree.no{color:var(--faint);}
+  .tag{font-size:10.5px; padding:4px 10px; border-radius:50px; font-weight:600; text-align:center; justify-self:end;}
+  .tag.win{background:#E4F3EC; color:#4FA587;}
+  .tag.wait{background:#F5ECD9; color:#C19A4A;}
+
+  /* ============ ADMIN LOGIN ============ */
+  .login{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; padding:40px 30px; text-align:center;}
+  .login .lock{width:66px; height:66px; border-radius:20px; display:flex; align-items:center; justify-content:center; font-size:28px;
+    background:linear-gradient(135deg,#EFE0F0,#E0D2F2); border:1px solid var(--line); margin-bottom:20px;}
+  .login h2{font-family:'Gowun Batang',serif; font-size:22px; color:var(--grape-deep);}
+  .login .lsub{font-size:12.5px; color:var(--muted); margin-top:7px; margin-bottom:26px; line-height:1.6;}
+  .login .lfield{width:100%; text-align:left; margin-bottom:14px;}
+  .login .lfield label{display:block; font-size:12px; font-weight:600; color:var(--ink-strong); margin-bottom:7px;}
+  .login .lerr{font-size:12px; color:#D87BAE; margin:2px 0 14px; min-height:16px; font-weight:600;}
+  .login . pw{position:relative;}
+  .login .demo-cred{font-size:11px; color:var(--faint); margin-top:16px; line-height:1.6; background:var(--card);
+    border:1px solid var(--line); border-radius:12px; padding:10px 14px;}
+  .login .demo-cred b{color:var(--grape-deep);}
+  .adm-logout{font-size:11.5px; padding:7px 12px; border-radius:10px; border:1px solid var(--line); background:#fff; color:var(--muted); font-weight:600;}
+
+  /* ============ SHARE ============ */
+  .share-wrap{flex:1; display:flex; flex-direction:column; padding:18px;}
+  .card-preview{border-radius:20px; overflow:hidden; border:1px solid var(--line); box-shadow:0 16px 34px -16px rgba(120,80,150,.4); margin-bottom:18px;}
+  .cp-top{background:linear-gradient(160deg,#F4DCEE,#DEC8F2); padding:28px 20px; text-align:center;}
+  .cp-top .glow{width:60px; height:60px; margin:0 auto 12px;}
+  .cp-top .ty{font-family:'Gowun Batang',serif; font-size:20px; font-weight:700; color:var(--grape-deep);}
+  .cp-top .sl{font-size:12px; color:var(--muted); margin-top:5px;}
+  .cp-meta{background:#fff; padding:13px 16px; font-size:11px; color:var(--faint); display:flex; justify-content:space-between;}
+  .sbtn{width:100%; padding:15px; border-radius:14px; font-size:14px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:9px; margin-bottom:10px;}
+  .sbtn svg{width:18px;height:18px;}
+  .share-q{text-align:center; font-size:12px; color:var(--faint); margin-top:6px;}
+
+  #toast{position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--ink-strong); color:#fff; padding:12px 22px; border-radius:50px; font-size:13px;
+    opacity:0; transition:all .3s; pointer-events:none; z-index:99; box-shadow:0 12px 30px -8px rgba(80,50,110,.5);}
+
+  .demo-nav{display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-top:18px; max-width:440px;}
+  .demo-nav button{font-size:11px; padding:7px 12px; border:1px solid #E2D2EA; background:rgba(255,255,255,.7);
+    border-radius:50px; color:var(--muted); transition:all .15s; font-weight:600;}
+  .demo-nav button:hover{border-color:var(--grape); color:var(--grape-deep);}
+  .demo-nav button.on{background:var(--grad-btn); color:#fff; border-color:transparent;}
+  .demo-hint{font-size:11px; color:#9a87aa; text-align:center; margin-top:9px; max-width:400px; line-height:1.6;}
+</style>
+</head>
+<body>
+<div class="device" id="device">
+
+  <!-- ============ LANDING ============ -->
+  <section class="screen active" data-screen="landing">
+    <div class="sky" id="sky1"></div>
+    <div class="landing">
+      <span class="badge">✦ AI 대화 성향 분석</span>
+      <div class="glow"></div>
+      <h1 class="ttl serif">나의 마음결<br>분석 테스트</h1>
+      <p class="sub">당신의 대화엔 성격이 숨어 있어요 🌷<br>5분의 수다로 알아보는 진짜 나는?</p>
+      <div class="countpill">✉ 이미 <b>18,204</b>명이 참여했어요</div>
+      <button class="cta" onclick="go('chat')">대화 시작하기</button>
+      <div class="lfoot">결과는 카카오톡으로<br>바로 공유할 수 있어요 💬</div>
+    </div>
+  </section>
+
+  <!-- ============ CHAT ============ -->
+  <section class="screen" data-screen="chat">
+    <div class="chead">
+      <span class="ava"></span>
+      <div>
+        <div class="nm">마음결 AI</div>
+        <div class="st"><span class="pulse"></span> <span id="turnLabel">대화 1 / 6</span></div>
+      </div>
+      <button class="back" onclick="resetChat();go('landing')">처음으로</button>
+    </div>
+    <div class="prail"><i id="prog"></i></div>
+    <div class="chat" id="chat"></div>
+    <div class="replies">
+      <div class="rhint" id="rhint">✦ 가볍게 골라도 좋고, 직접 적어도 좋아요</div>
+      <div id="opts"></div>
+      <div class="typebar">
+        <input id="chatInput" placeholder="내 이야기를 직접 적어볼게요…" onkeydown="if(event.key==='Enter')sendTyped()">
+        <button class="send" onclick="sendTyped()" aria-label="보내기">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ LOADING ============ -->
+  <section class="screen" data-screen="loading">
+    <div class="loading">
+      <div class="load-orb">
+        <svg width="130" height="130" viewBox="0 0 130 130">
+          <circle cx="65" cy="65" r="58" fill="none" stroke="#EFE0F0" stroke-width="5"/>
+          <circle id="loadArc" cx="65" cy="65" r="58" fill="none" stroke="url(#lg)" stroke-width="5" stroke-linecap="round" stroke-dasharray="364" stroke-dashoffset="364"/>
+          <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E59CC4"/><stop offset="1" stop-color="#B27CD6"/></linearGradient></defs>
+        </svg>
+        <div class="glow"></div>
+      </div>
+      <div>
+        <div class="load-t serif" id="loadT">대화의 결을 따라 읽는 중</div>
+        <div class="load-s">당신이 쓴 단어와 선택의 무늬에서 마음의 결을 해독하고 있어요</div>
+      </div>
+      <div class="load-steps" id="loadSteps"></div>
+    </div>
+  </section>
+
+  <!-- ============ RESULT ============ -->
+  <section class="screen" data-screen="result">
+    <div class="r-hero">
+      <div class="glow"></div>
+      <div class="r-kicker">당신의 마음결</div>
+      <div class="r-type serif" id="r-type">고요한 설계자<small id="r-type-en">THE QUIET ARCHITECT</small></div>
+      <div class="r-tags" id="r-tags"></div>
+      <div class="r-rare" id="r-rare">✦ 전체의 6.8%에게서만 나타나는 결이에요</div>
+    </div>
+    <div class="r-body">
+      <div class="sec">
+        <div class="sec-label"><span class="no">1</span><span class="tt serif">당신의 마음결</span><span class="en">reading</span></div>
+        <div class="narr" id="narrative"></div>
+      </div>
+      <div class="sec">
+        <div class="sec-label"><span class="no">2</span><span class="tt serif">성향 지표</span><span class="en">scores</span></div>
+        <div id="scoreList"></div>
+      </div>
+      <div class="sec">
+        <div class="sec-label"><span class="no">3</span><span class="tt serif">내 감각에 맞게 조정</span><span class="en">tune</span></div>
+        <div class="adjust-card">
+          <div class="adjust-intro">AI가 읽은 점수가 실제 나와 조금 다르다면, <b>직접 움직여 보정</b>할 수 있어요. 슬라이더를 옮긴 뒤 버튼을 누르면 그래프가 다시 계산돼요.</div>
+          <div id="slotList"></div>
+          <button class="recalc" onclick="recalc()">✦ 보정값으로 다시 해석하기</button>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sec-label"><span class="no">4</span><span class="tt serif">이런 순간의 당신</span><span class="en">in context</span></div>
+        <div id="sitList"></div>
+      </div>
+      <div class="sec">
+        <div class="sec-label"><span class="no">5</span><span class="tt serif">결을 더 살리는 법</span><span class="en">grow</span></div>
+        <div id="growList"></div>
+      </div>
+    </div>
+    <div class="r-foot">
+      <div class="divider">END OF READING</div>
+      <button class="cta" onclick="go('share')">내 결과 공유하기</button>
+      <button class="cta ghost" style="margin-top:10px" onclick="go('session')">더 깊은 1:1 결 퍼실리테이션 신청하기 →</button>
+      <button class="cta ghost" style="margin-top:10px" onclick="resetChat();go('landing')">처음으로 돌아가기</button>
+    </div>
+  </section>
+
+  <!-- ============ SESSION INTRO ============ -->
+  <section class="screen" data-screen="session">
+    <div class="ses-hero">
+      <div class="glow"></div>
+      <h2 class="serif">무의식 결 퍼실리테이션</h2>
+      <div class="meta">1:1 심층 · 약 90분 · 전문 퍼실리테이터 동행</div>
+    </div>
+
+    <div class="ses-lede">
+      테스트가 당신의 <b>마음결을 ‘발견’</b>하는 단계였다면, 퍼실리테이션은 그 결을 실제 삶에서 <b>‘쓸 수 있게’</b> 만드는 시간이에요. 결과지에 담기지 않은 맥락 — 요즘의 고민, 반복되는 관계 패턴, 미뤄둔 결정 —을 전문 퍼실리테이터와 함께 풀어내고, <b>당신만의 언어와 실행 전략</b>으로 다시 설계합니다.
+    </div>
+
+    <div class="ses-sechead"><span class="sno">1</span><span class="stt">90분, 이렇게 진행돼요</span></div>
+    <div class="ses-body">
+      <div class="step"><span class="num" style="background:linear-gradient(135deg,#E59CC4,#D87BAE)">1</span><div><div class="sh">언어 무늬 스캔</div><div class="se">Language Pattern Scan</div><div class="sd">테스트 답변과 평소 말버릇에서 반복되는 단어·은유를 함께 짚어, 당신이 무의식적으로 세상을 보는 ‘렌즈’를 언어로 꺼냅니다.</div></div></div>
+      <div class="step"><span class="num" style="background:linear-gradient(135deg,#A8D8C8,#7FBFAC)">2</span><div><div class="sh">숨은 동기 해독</div><div class="se">Hidden Driver Decoding</div><div class="sd">‘왜 자꾸 이 지점에서 멈출까’의 진짜 이유를 찾습니다. 회피가 아니라 보호였던 동기를 확인하면, 자기비난이 줄고 선택이 가벼워져요.</div></div></div>
+      <div class="step"><span class="num" style="background:linear-gradient(135deg,#F5E0A8,#E8C56A)">3</span><div><div class="sh">반복 패턴 진단</div><div class="se">Recurring Loop Diagnosis</div><div class="sd">직장·연애·관계에서 반복되는 시나리오를 한 장의 지도로 그립니다. 패턴이 보이면, 그 고리를 끊을 지점도 같이 보여요.</div></div></div>
+      <div class="step"><span class="num" style="background:linear-gradient(135deg,#C9A8E8,#A87EDB)">4</span><div><div class="sh">결 재설계</div><div class="se">Grain Redesign</div><div class="sd">앞으로 한 달, 당신의 결을 ‘살리는’ 구체적 실행안을 함께 만듭니다. 추상적 다짐이 아니라, 내일부터 해볼 수 있는 행동으로요.</div></div></div>
+    </div>
+
+    <div class="ses-sechead"><span class="sno">2</span><span class="stt">함께 제공되는 솔루션</span></div>
+    <div class="solwrap">
+      <div class="sol">
+        <div class="si" style="background:#F3E3F0">📖</div>
+        <div>
+          <div class="sht">맞춤 추천 도서 <span class="pill">BOOK</span></div>
+          <div class="sbd">당신의 결 유형에 맞춰 <em>큐레이션한 3권</em>의 책과, 각 권에서 ‘당신이라면 이 챕터부터’ 읽기 가이드를 드려요. 읽고 끝이 아니라, 다음 만남에서 함께 곱씹어요.</div>
+        </div>
+      </div>
+      <div class="sol">
+        <div class="si" style="background:#E7F2EC">💬</div>
+        <div>
+          <div class="sht">소그룹 결 토론 <span class="pill">TALK GROUP</span></div>
+          <div class="sbd">비슷한 결, 혹은 정반대의 결을 가진 사람들과의 <em>월 1회 소그룹 토론</em>. 내 패턴을 남의 입을 통해 듣는 경험이 가장 빠른 통찰을 줘요. 4~6인 소규모로 진행돼요.</div>
+        </div>
+      </div>
+      <div class="sol">
+        <div class="si" style="background:#F6F0DD">🎤</div>
+        <div>
+          <div class="sht">멤버 전용 강연 <span class="pill">LECTURE</span></div>
+          <div class="sbd">심리·커리어·관계 분야 연사의 <em>오프라인·온라인 강연</em>에 우선 초대돼요. 강연 후엔 퍼실리테이터와 ‘내 결에 적용하기’ 짧은 워크숍이 이어져요.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ses-info">
+      <div class="ich"><div class="il">형식</div><div class="iv">오프라인 대면 진행</div></div>
+      <div class="ich"><div class="il">시간</div><div class="iv">90분 <small>+ 후속 케어</small></div></div>
+      <div class="ich"><div class="il">결과물</div><div class="iv">결 리포트 PDF</div></div>
+      <div class="ich"><div class="il">코칭</div><div class="iv">4주 성장 코칭</div></div>
+    </div>
+
+    <div class="ses-quote">
+      <div class="qt">“테스트만 봤을 땐 ‘맞네’ 하고 넘겼는데, 퍼실리테이션에서 제 반복 패턴을 지도로 보니 그제야 납득됐어요. 추천받은 책이랑 토론 모임이 진짜 도움 됐어요.”</div>
+      <div class="qw">— 30대 직장인 지현 님, 4월 회차 참여</div>
+    </div>
+
+    <div class="ses-note" style="margin:16px 20px 0;">
+      <div class="nh">🌸 퍼실리테이션을 마치면</div>
+      <div class="nb">나를 설명하는 언어가 또렷해지고, 흩어진 직관을 데이터로 확인받아 자기 신뢰가 올라가요. 무엇보다 ‘무엇을 바꿔야 할지’가 막연한 느낌에서 <b style="color:var(--grape-deep)">구체적 다음 행동</b>으로 바뀝니다.</div>
+    </div>
+
+    <div class="ses-foot">
+      <button class="cta" onclick="go('apply')">퍼실리테이션 신청하기</button>
+      <button class="cta ghost" style="margin-top:10px" onclick="go('result')">결과로 돌아가기</button>
+      <div class="ses-disc">자기이해·성장을 돕는 코칭 콘텐츠예요. 의학적 진단·치료가 아닙니다.<br>정원이 한정되어 추첨으로 모십니다.</div>
+    </div>
+  </section>
+
+  <!-- ============ APPLY FORM ============ -->
+  <section class="screen" data-screen="apply">
+    <div class="apply-hero">
+      <div class="glow"></div>
+      <h2 class="serif">퍼실리테이션 신청하기</h2>
+      <p>당첨자에게만 개별 연락드려요 ✨</p>
+    </div>
+    <div class="form">
+      <div class="field">
+        <label>이름</label>
+        <input class="inp" id="f-name" placeholder="실명을 입력해 주세요">
+      </div>
+      <div class="field">
+        <label>휴대폰 번호</label>
+        <input class="inp" id="f-tel" inputmode="numeric" placeholder="010-0000-0000" oninput="fmtTel(this)">
+      </div>
+      <div class="field">
+        <label>🗓 가능한 날짜 <span class="multi">여러 개 선택</span></label>
+        <div class="cal-head">
+          <button type="button" class="cal-nav" id="calPrev" onclick="calMove(-1)" aria-label="이전 달">‹</button>
+          <div class="cal-title" id="calTitle">2026년 6월</div>
+          <button type="button" class="cal-nav" id="calNext" onclick="calMove(1)" aria-label="다음 달">›</button>
+        </div>
+        <div class="cal" id="cal"></div>
+        <div class="cal-picked" id="calPicked"></div>
+      </div>
+      <div class="field">
+        <label>⏰ 가능한 시간대 <span class="multi">여러 개 선택</span></label>
+        <div class="slots" id="slots"></div>
+      </div>
+      <label class="check" id="chk1" onclick="toggleChk('chk1')">
+        <span class="box">✓</span>
+        <span class="ct">개인정보(이름·연락처) 수집 및 당첨 안내 연락에 동의합니다. <span class="req">(필수)</span></span>
+      </label>
+      <label class="check" id="chk2" onclick="toggleChk('chk2')">
+        <span class="box">✓</span>
+        <span class="ct">본 퍼실리테이션은 자기이해·성장을 돕는 코칭 콘텐츠이며, 의학적 진단·치료가 아님을 이해했습니다. <span class="req">(필수)</span></span>
+      </label>
+    </div>
+    <div class="form-foot">
+      <button class="cta" id="applyBtn" onclick="submitApply()">신청 완료하기</button>
+      <button class="cta ghost" style="margin-top:10px" onclick="go('session')">이전으로</button>
+    </div>
+  </section>
+
+  <!-- ============ APPLY DONE ============ -->
+  <section class="screen" data-screen="done">
+    <div class="done">
+      <div class="glow"></div>
+      <h2 class="serif">신청이 접수됐어요</h2>
+      <p>추첨을 통해 당첨되시면<br>입력하신 번호로 개별 연락드릴게요 ✨</p>
+      <div class="recap" id="recap"></div>
+      <button class="cta" onclick="go('result')">결과로 돌아가기</button>
+    </div>
+  </section>
+
+  <!-- ============ SHARE ============ -->
+  <section class="screen" data-screen="share">
+    <div class="chead">
+      <span class="ava"></span>
+      <div><div class="nm">결과 공유</div><div class="st">친구의 결도 궁금하지 않나요?</div></div>
+      <button class="back" onclick="go('result')">결과로</button>
+    </div>
+    <div class="share-wrap">
+      <div class="card-preview">
+        <div class="cp-top">
+          <div class="glow"></div>
+          <div class="ty serif" id="cp-type">고요한 설계자</div>
+          <div class="sl">AI가 5분 대화로 읽어낸 나의 마음결</div>
+        </div>
+        <div class="cp-meta"><span id="cp-url">maeumgyeol.app/r/SJ-204</span><span>✦ 마음결</span></div>
+      </div>
+      <button class="sbtn" style="background:#FEE500;color:#3C1E1E" onclick="openShare('kakao')">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.5 3 2 6.6 2 11c0 2.8 1.9 5.3 4.7 6.7-.2.7-.7 2.6-.8 3-.1.5.2.5.4.4.2-.1 2.6-1.8 3.6-2.5.7.1 1.4.2 2.1.2 5.5 0 10-3.6 10-8S17.5 3 12 3z"/></svg>
+        카카오톡으로 공유
+      </button>
+      <button class="sbtn" style="background:#fff;border:1.5px solid var(--line);color:var(--grape-deep)" onclick="openShare('link')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>
+        결과 링크 복사
+      </button>
+      <div class="share-q">결은 사람마다 달라요. 친구와 비교해보면 더 재미있어요 ✦</div>
+    </div>
+  </section>
+
+
+</div>
+
+<div class="demo-nav" style="display:none">
+  <button class="on" onclick="go('landing',this)">랜딩</button>
+  <button onclick="go('chat',this)">대화</button>
+  <button onclick="go('loading',this)">분석중</button>
+  <button onclick="go('result',this)">결과</button>
+  <button onclick="go('session',this)">세션안내</button>
+  <button onclick="go('apply',this)">신청폼</button>
+  <button onclick="go('share',this)">공유</button>
+</div>
+
+<div id="toast"></div>
+
+<!-- ===== Firebase (Firestore) 연동 ===== -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+  import { getFirestore, collection, addDoc, serverTimestamp }
+    from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCfc-CQF1vg6kNJZtLx1j_pDVzipB63Mlc",
+    authDomain: "gyeol2.firebaseapp.com",
+    projectId: "gyeol2",
+    storageBucket: "gyeol2.firebasestorage.app",
+    messagingSenderId: "417042010261",
+    appId: "1:417042010261:web:2642113d3cc78613ce4b9c",
+    measurementId: "G-9HTL73P3K7"
+  };
+
+  try{
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    // 전역으로 신청 저장 함수 노출 (일반 스크립트에서 호출)
+    window.fbSaveApplicant = async function(rec){
+      await addDoc(collection(db,'applicants'), {
+        name: rec.name||'', tel: rec.tel||'',
+        pref: rec.pref||'', times: rec.times||'',
+        agree: !!rec.agree, status: rec.status||'wait',
+        createdAt: serverTimestamp()
+      });
+    };
+    window.fbReady = true;
+  }catch(e){
+    console.warn('Firebase 초기화 실패 — localStorage로 대체합니다.', e);
+    window.fbReady = false;
+  }
+</script>
+
+<script>
+/* ---------- sparkles ---------- */
+(function(){
+  const sky=document.getElementById('sky1'); if(!sky) return;
+  const marks=['✦','✧','˖','✦','·'];
+  for(let i=0;i<14;i++){
+    const s=document.createElement('span'); s.className='sp';
+    s.textContent=marks[i%marks.length];
+    s.style.left=(Math.random()*92+3)+'%';
+    s.style.top=(Math.random()*88+3)+'%';
+    s.style.fontSize=(8+Math.random()*10)+'px';
+    s.style.animationDelay=(Math.random()*4)+'s';
+    sky.appendChild(s);
+  }
+})();
+
+/* ---------- navigation ---------- */
+const device=document.getElementById('device');
+const navMap={landing:0,chat:1,loading:2,result:3,session:4,apply:5,share:6};
+function go(name, btn){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active', s.dataset.screen===name));
+  document.querySelectorAll('.demo-nav button').forEach(b=>b.classList.remove('on'));
+  if(btn) btn.classList.add('on');
+  else{ const nb=document.querySelectorAll('.demo-nav button')[navMap[name]]; if(nb) nb.classList.add('on'); }
+  if(name==='chat' && document.getElementById('chat').children.length===0) resetChat();
+  if(name==='loading') runLoading();
+  if(name==='result') renderResult();
+  if(name==='apply') buildForm();
+  const active=document.querySelector('.screen.active');
+  if(active) active.scrollTop=0;
+  device.scrollTop=0; window.scrollTo({top:0,behavior:'smooth'});
+}
+
+const TOTAL=10; let turn=1;
+const qa=[
+  {q:'안녕하세요, 마음결이에요 ✦<br>오늘은 “요즘의 나”에 대해 가볍게 얘기해볼게요. 시간 가는 줄 모르고 빠져드는 순간이 있어요?',
+   opts:[['혼자 깊게 파고들 때요','자료 정리하거나 구조를 짤 때 몰입돼요'],['사람들과 부딪히며 만들 때요','아이디어를 주고받을 때 살아나요']]},
+  {q:'좋아요. 새로운 일을 맡으면 가장 먼저 하는 건 보통 뭐예요?',
+   opts:[['전체 그림부터 그려요','순서를 잡아야 마음이 편해요'],['일단 부딪혀봐요','해보면서 감을 잡는 게 빨라요']]},
+  {q:'주말에 아무 약속도 없는 날, 더 나다운 쪽은 어느 쪽이에요?',
+   opts:[['집에서 혼자 충전해요','조용히 보내면 에너지가 차올라요'],['누군가와 약속을 잡아요','사람을 만나야 기운이 나요']]},
+  {q:'중요한 결정을 앞뒀을 때, 당신을 더 움직이는 건요?',
+   opts:[['데이터와 근거예요','따져보고 납득돼야 움직여요'],['그 순간의 직감이에요','느낌이 오면 일단 믿어요']]},
+  {q:'일이 꼬이거나 막혔을 때, 그 순간의 나를 떠올려보면…',
+   opts:[['혼자 한참 곱씹어요','말로 꺼내기 전에 안에서 정리해요'],['바로 누군가에게 말해요','꺼내놓아야 풀리는 편이에요']]},
+  {q:'누군가 당신에게 자주 고마워하는 부분이 있다면, 뭘 거 같아요?',
+   opts:[['믿고 맡길 수 있다는 점','끝까지 책임진다는 말을 들어요'],['분위기를 살린다는 점','함께 있으면 편하다는 말을 들어요']]},
+  {q:'계획이 갑자기 틀어졌어요. 첫 반응에 더 가까운 건요?',
+   opts:[['잠깐 멈칫, 다시 계획을 짜요','틀이 흔들리면 일단 정비부터'],['오 그럼 이건 어때? 하고 바꿔요','즉흥적으로 푸는 게 재밌어요']]},
+  {q:'일하면서 “이건 좀 지친다” 싶은 순간은 어떤 때예요?',
+   opts:[['급하게 몰아칠 때','생각할 시간이 없으면 힘들어요'],['혼자 오래 있을 때','피드백 없이 고립되면 지쳐요']]},
+  {q:'당신을 가장 단단하게 지탱해주는 가치는 어느 쪽에 가까워요?',
+   opts:[['신뢰와 깊이','한 번 맺으면 오래 가는 관계'],['자유와 새로움','매일이 조금씩 달랐으면 해요']]},
+  {q:'마지막이에요. 1년 뒤, 어떤 모습이면 “잘 컸다” 싶을까요?',
+   opts:[['내 분야에서 깊어진 모습','전문성으로 인정받고 싶어요'],['더 넓게 연결된 모습','다양한 사람·일과 이어지고 싶어요']]}
+];
+function aiAva(){return '<div class="ai-ava"></div>';}
+function bubbleAI(html){const c=document.getElementById('chat');const r=document.createElement('div');r.className='row';r.innerHTML=aiAva()+`<div class="bub-a">${html}</div>`;c.appendChild(r);c.scrollTop=c.scrollHeight;}
+function bubbleMe(t){const c=document.getElementById('chat');const r=document.createElement('div');r.className='row me';r.innerHTML=`<div class="bub-m">${t}</div>`;c.appendChild(r);c.scrollTop=c.scrollHeight;}
+function showTyping(){const c=document.getElementById('chat');const r=document.createElement('div');r.className='row';r.id='typing';r.innerHTML=aiAva()+`<div class="bub-a typing"><span></span><span></span><span></span></div>`;c.appendChild(r);c.scrollTop=c.scrollHeight;}
+function hideTyping(){const t=document.getElementById('typing');if(t)t.remove();}
+function renderOpts(){const i=turn-1,w=document.getElementById('opts');if(i>=qa.length){w.innerHTML='';return;}
+  w.innerHTML=qa[i].opts.map(o=>`<button class="opt" onclick="pick('${o[0].replace(/'/g,"\\'")}')"><span class="lead">${o[0]}</span><span class="sub2">${o[1]}</span></button>`).join('');}
+function setProgress(){document.getElementById('prog').style.width=Math.min(100,(turn-1)/TOTAL*100)+'%';document.getElementById('turnLabel').textContent='대화 '+Math.min(turn,TOTAL)+' / '+TOTAL;}
+function advance(){turn++;setProgress();
+  if(turn<=qa.length){document.getElementById('opts').innerHTML='';document.getElementById('rhint').style.opacity='0';showTyping();
+    setTimeout(()=>{hideTyping();bubbleAI(qa[turn-1].q);renderOpts();document.getElementById('rhint').style.opacity='1';},850);}
+  else{document.getElementById('opts').innerHTML='';document.getElementById('rhint').textContent='';showTyping();
+    setTimeout(()=>{hideTyping();bubbleAI('고마워요. 충분히 들었어요 ✦<br>이제 당신의 마음결을 읽어볼게요.');setTimeout(()=>go('loading'),1000);},850);}}
+function pick(t){bubbleMe(t);advance();}
+function sendTyped(){const i=document.getElementById('chatInput');if(!i.value.trim())return;bubbleMe(i.value.trim());i.value='';advance();}
+function resetChat(){turn=1;setProgress();document.getElementById('chat').innerHTML='';
+  document.getElementById('rhint').textContent='✦ 가볍게 골라도 좋고, 직접 적어도 좋아요';document.getElementById('rhint').style.opacity='1';
+  showTyping();setTimeout(()=>{hideTyping();bubbleAI(qa[0].q);renderOpts();},600);}
+
+/* ---------- loading ---------- */
+let loadTimer=null;
+function runLoading(){
+  const arc=document.getElementById('loadArc');arc.style.transition='none';arc.style.strokeDashoffset='364';void arc.offsetWidth;
+  arc.style.transition='stroke-dashoffset 3.4s ease';arc.style.strokeDashoffset='0';
+  const steps=['언어의 무늬 스캔','선택의 패턴 해독','마음 좌표 그리기','결 유형 매칭'];
+  const sw=document.getElementById('loadSteps');
+  sw.innerHTML=steps.map((s,i)=>`<div class="lstep" data-i="${i}"><span class="tick">✓</span>${s}</div>`).join('');
+  const texts=['대화의 결을 따라 읽는 중','반복되는 선택을 모으는 중','당신만의 마음 좌표를 그리는 중'];
+  let i=0;const lt=document.getElementById('loadT');clearInterval(loadTimer);
+  loadTimer=setInterval(()=>{lt.textContent=texts[(++i)%texts.length];const st=sw.querySelector(`[data-i="${(i-1)%steps.length}"]`);if(st)st.classList.add('on');},850);
+  setTimeout(()=>{sw.querySelectorAll('.lstep').forEach(e=>e.classList.add('on'));clearInterval(loadTimer);go('result');},3500);
+}
+
+/* ---------- result data ---------- */
+const dims=[
+  {key:'depth',nm:'깊이 몰입',sub:'한 가지를 끝까지 파고드는 힘',v:88,color:'#B27CD6',meta:'주의가 흩어지지 않고 한 곳에 오래 머물러요. 복잡한 문제일수록 강해져요.'},
+  {key:'struct',nm:'구조화',sub:'흩어진 것을 정리하는 감각',v:84,color:'#9B5FC4',meta:'전체 그림을 먼저 그리고 순서를 잡는 편. 혼란 속에서 질서를 만들어요.'},
+  {key:'steady',nm:'책임 지속력',sub:'맡은 걸 끝까지 가져가는 끈기',v:79,color:'#E59CC4',meta:'시작보다 마무리가 강해요. 믿고 맡길 수 있는 사람으로 기억돼요.'},
+  {key:'reflect',nm:'내적 정리',sub:'말보다 먼저 안에서 소화',v:82,color:'#C9A8E8',meta:'반응이 빠르진 않지만 그만큼 정제돼 있어요. 침묵이 게으름이 아니에요.'},
+  {key:'connect',nm:'관계 확장',sub:'사람·일을 넓게 잇는 힘',v:54,color:'#A8D8C8',meta:'넓히기보다 깊이는 쪽. 의식적으로 연결을 늘리면 기회의 폭이 커져요.'},
+  {key:'spark',nm:'즉흥 추진',sub:'일단 부딪혀 보는 속도',v:48,color:'#F5C97E',meta:'완벽히 준비된 뒤 움직이는 편. 때로는 70%에서 출발해도 괜찮아요.'}
+];
+const chosen={name:'고요한 설계자',en:'THE QUIET ARCHITECT',code:'SJ-204',tags:['#깊이몰입','#구조화','#신뢰','#자기충전형'],rare:'전체의 6.8%에게서만 나타나는 결이에요'};
+
+function narrativeHTML(){return `
+  <p>당신은 <b>밖으로 빠르게 드러나는 사람</b>이라기보다, <b>안에서 단단하게 완성해 가는 사람</b>이에요. 새 일이 주어지면 곧바로 뛰어들기보다 전체 그림을 먼저 그리고, 순서를 잡고, 그제야 손을 움직이죠. 남들 눈엔 조금 느려 보일 수 있지만, 그 시간 동안 당신 머릿속에선 이미 절반이 지어지고 있어요.</p>
+  <p class="pull">“느린 게 아니라, 무너지지 않게 짓고 있는 거예요.”</p>
+  <p>20대 후반에서 30대 초반, 많은 사람들이 <b>‘남들은 다 빠르게 성과를 내는 것 같은데 나만 뒤처지나’</b> 하는 불안을 안고 살아요. 특히 SNS에서 또래의 이직·승진·사이드프로젝트 소식을 볼 때면 더 그렇죠. 그런데 당신의 강점은 속도가 아니라 <b>밀도</b>예요. 빠르게 여러 개를 벌이는 사람이 채우지 못하는 ‘끝까지의 완성도’를, 당신은 조용히 채워요.</p>
+  <p>회의에서 가장 먼저 말하는 사람은 아닐 거예요. 대신 한 박자 늦게, 누구도 짚지 못한 빈틈을 정확히 건드리는 사람. 그 한마디 때문에 회의의 방향이 바뀐 적이 분명 있을 거예요. 당신이 침묵하는 시간은 비어 있는 게 아니라, <b>정리되는 중</b>이에요.</p>
+  <p>다만 이 결에는 그늘도 있어요. 완벽하게 준비되기 전엔 좀처럼 시작 버튼을 누르지 못한다는 것, 그리고 혼자 깊이 들어가다 보면 <b>‘내가 잘 가고 있는 건지’ 확인받을 창구가 줄어든다는 것.</b> 당신에게 필요한 건 더 빨라지는 게 아니라, <b>70%에서 한 번 꺼내 보이는 용기</b>예요. 완성하기 전에 보여줘도 세상은 무너지지 않아요. 오히려 그때부터 당신의 깊이가 사람들에게 닿기 시작해요.</p>`;}
+
+function renderResult(){
+  document.getElementById('r-type').innerHTML=chosen.name+`<small>${chosen.en}</small>`;
+  document.getElementById('r-tags').innerHTML=chosen.tags.map(t=>`<span class="r-tag">${t}</span>`).join('');
+  document.getElementById('r-rare').innerHTML='✦ '+chosen.rare;
+  document.getElementById('cp-type').textContent=chosen.name;
+  const cu=document.getElementById('cp-url'); if(cu){ cu.textContent=resultUrl().replace(/^https?:\/\//,''); }
+  document.getElementById('narrative').innerHTML=narrativeHTML();
+  document.getElementById('scoreList').innerHTML=dims.map(d=>`
+    <div class="score"><div class="score-top"><div class="score-nm">${d.nm}<span class="lab">${d.sub}</span></div>
+      <div class="score-vv" data-key="${d.key}">${d.v}</div></div>
+      <div class="score-rail"><i data-w="${d.v}" style="background:${d.color}"></i></div>
+      <div class="score-meta">${d.meta}</div></div>`).join('');
+  requestAnimationFrame(()=>setTimeout(()=>{document.querySelectorAll('#scoreList .score-rail>i').forEach(s=>s.style.width=s.dataset.w+'%');},120));
+  document.getElementById('slotList').innerHTML=dims.map(d=>`
+    <div class="slot"><div class="slot-top"><div class="slot-nm">${d.nm}<span class="d">${d.sub}</span></div>
+      <div class="slot-val" id="sv-${d.key}">${d.v}</div></div>
+      <input type="range" min="0" max="100" value="${d.v}" data-key="${d.key}" oninput="onSlide(this)"></div>`).join('');
+  document.querySelectorAll('#slotList input[type=range]').forEach(paintRange);
+  const sits=[
+    {ic:'💼',bg:'#F3E3F0',h:'직장 — 새 프로젝트가 떨어졌을 때',b:'남들이 바로 손대는 동안, 당신은 먼저 구조를 그려요. 처음 며칠은 “아직 시작 안 했어?” 소리를 들을 수도. 하지만 중반부터 흔들리지 않는 사람이 당신이고, 마감 앞에서 무너지지 않는 것도 당신이에요.'},
+    {ic:'💗',bg:'#F6E7EF',h:'연애 — 갈등이 생겼을 때',b:'서운한 일이 있어도 그 자리에서 바로 쏟아내기보다 혼자 곱씹는 편. 상대는 가끔 “말을 안 해주니 답답하다”고 느낄 수 있어요. 가끔은 <b>정리 중이라는 사실 자체를</b> 알려주는 것만으로 관계가 한결 편해져요.'},
+    {ic:'🤝',bg:'#E7F2EC',h:'관계 — 새로운 모임에 들어갔을 때',b:'처음부터 분위기를 주도하진 않아요. 대신 시간이 지날수록 “저 사람 은근히 깊다”는 신뢰를 얻죠. 넓고 얕은 인맥보다, 좁고 단단한 관계에서 당신의 진가가 드러나요.'}
+  ];
+  document.getElementById('sitList').innerHTML=sits.map(s=>`<div class="sit"><div class="ic" style="background:${s.bg}">${s.ic}</div><div><div class="h">${s.h}</div><div class="b">${s.b}</div></div></div>`).join('');
+  const grows=[
+    {n:'1',h:'70%에서 한 번 꺼내 보기',b:'완벽히 준비된 뒤에 보여주려는 습관이 시작을 늦춰요. 초안 단계에서 신뢰하는 한 사람에게 보여주는 연습을 해보세요.',try:'이번 주, 미완성 작업물 하나를 누군가에게 공유해보기'},
+    {n:'2',h:'생각 중이라는 걸 말로 알리기',b:'당신의 침묵을 남들은 무관심으로 오해할 때가 있어요. “조금만 정리하고 말해줄게”라는 한 문장이 관계를 지켜줘요.',try:'바로 답이 안 나올 때 “생각 중이야”라고 말해두기'},
+    {n:'3',h:'연결의 폭을 의식적으로 넓히기',b:'깊이는 이미 충분해요. 한 달에 한 번, 평소 안 만나던 분야의 사람과 대화해보면 기회의 결이 넓어져요.',try:'다른 직무·분야의 사람에게 커피챗 먼저 제안하기'}
+  ];
+  document.getElementById('growList').innerHTML=grows.map(g=>`<div class="grow"><div class="n serif">${g.n}</div><div><div class="gh">${g.h}</div><div class="gb">${g.b}</div><div class="try">✦ 실천 — ${g.try}</div></div></div>`).join('');
+}
+function paintRange(el){el.style.background=`linear-gradient(90deg,var(--grape) 0%,var(--grape) ${el.value}%,#EBDEF0 ${el.value}%)`;}
+function onSlide(el){paintRange(el);document.getElementById('sv-'+el.dataset.key).textContent=el.value;}
+function recalc(){
+  document.querySelectorAll('#slotList input[type=range]').forEach(el=>{dims.find(x=>x.key===el.dataset.key).v=parseInt(el.value,10);});
+  document.querySelectorAll('#scoreList .score').forEach((b,i)=>{b.querySelector('.score-rail>i').style.width=dims[i].v+'%';b.querySelector('.score-vv').textContent=dims[i].v;});
+  const top=[...dims].sort((a,b)=>b.v-a.v)[0];
+  toast('보정값으로 다시 해석했어요 ✦ 가장 강한 결: '+top.nm);
+  const sc=document.getElementById('scoreList');if(sc)sc.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* ---------- apply form ---------- */
+let pickedDays=new Set(), pickedTimes=new Set(), chk={chk1:false,chk2:false};
+const TIMES=['오전 10시','오전 11시','오후 1시','오후 2시','오후 4시','저녁 7시'];
+
+/* 달력 상태: 보고 있는 연/월 */
+let calYear, calMonth; // calMonth: 0~11
+function todayMidnight(){ const t=new Date(); t.setHours(0,0,0,0); return t; }
+function ymd(y,m,d){ return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'); }
+function ymdToLabel(key){ const [y,m,d]=key.split('-').map(Number); return (m)+'/'+d; }      // 6/16
+function ymdToFull(key){ const [y,m,d]=key.split('-').map(Number); return y+'년 '+m+'월 '+d+'일'; }
+
+function buildForm(){
+  const today=todayMidnight();
+  calYear=today.getFullYear();
+  calMonth=today.getMonth();
+  pickedDays=new Set(); pickedTimes=new Set(); chk={chk1:false,chk2:false};
+  renderCal();
+  renderPicked();
+  document.getElementById('slots').innerHTML=TIMES.map(t=>`<div class="tslot" data-t="${t}" onclick="toggleTime(this)">${t}</div>`).join('');
+  document.querySelectorAll('.check').forEach(c=>c.classList.remove('on'));
+  document.getElementById('f-name').value=''; document.getElementById('f-tel').value='';
+  refreshApplyBtn();
+}
+
+function calMove(dir){
+  // 과거(현재 달 이전)로는 못 가게 막고, 미래로는 자유롭게
+  const today=todayMidnight();
+  const cy=today.getFullYear(), cm=today.getMonth();
+  let y=calYear, m=calMonth+dir;
+  if(m<0){ m=11; y--; } else if(m>11){ m=0; y++; }
+  if(y<cy || (y===cy && m<cm)) return; // 현재 달 이전 차단
+  calYear=y; calMonth=m;
+  renderCal();
+}
+
+function renderCal(){
+  const cal=document.getElementById('cal');
+  const dow=['일','월','화','수','목','금','토'];
+  const today=todayMidnight();
+  const cy=today.getFullYear(), cm=today.getMonth(), cd=today.getDate();
+
+  document.getElementById('calTitle').textContent=calYear+'년 '+(calMonth+1)+'월';
+  // 이전 버튼: 현재 달이면 비활성
+  document.getElementById('calPrev').disabled = (calYear===cy && calMonth===cm);
+
+  let html=dow.map((d,i)=>`<div class="dow${i===0?' dow-sun':''}">${d}</div>`).join('');
+  const firstDow=new Date(calYear,calMonth,1).getDay();        // 1일의 요일(0=일)
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();  // 이번 달 일수
+  for(let i=0;i<firstDow;i++) html+=`<div class="day empty"></div>`;
+  for(let d=1; d<=daysInMonth; d++){
+    const col=(firstDow+d-1)%7;
+    const key=ymd(calYear,calMonth,d);
+    const isPast = new Date(calYear,calMonth,d) < today;
+    const isToday = (calYear===cy && calMonth===cm && d===cd);
+    const cls=['day'];
+    if(col===0) cls.push('dow-sun');
+    if(isPast) cls.push('disabled');
+    if(isToday) cls.push('today');
+    if(pickedDays.has(key)) cls.push('on');
+    const onclick = isPast ? '' : ` onclick="toggleDay('${key}')"`;
+    html+=`<div class="${cls.join(' ')}" data-key="${key}"${onclick}>${d}</div>`;
+  }
+  cal.innerHTML=html;
+}
+
+function toggleDay(key){
+  if(pickedDays.has(key)) pickedDays.delete(key); else pickedDays.add(key);
+  // 현재 보이는 칸 토글
+  const el=document.querySelector(`.cal .day[data-key="${key}"]`);
+  if(el) el.classList.toggle('on', pickedDays.has(key));
+  renderPicked();
+  refreshApplyBtn();
+}
+
+function renderPicked(){
+  const box=document.getElementById('calPicked');
+  if(pickedDays.size===0){ box.innerHTML=`<span class="none">아직 선택한 날짜가 없어요</span>`; return; }
+  const keys=[...pickedDays].sort();
+  box.innerHTML=keys.map(k=>`<span class="chip"><b>${ymdToFull(k)}</b><span class="x" onclick="toggleDay('${k}')">×</span></span>`).join('');
+}
+
+function toggleTime(el){const t=el.dataset.t; el.classList.toggle('on'); el.classList.contains('on')?pickedTimes.add(t):pickedTimes.delete(t); refreshApplyBtn();}
+function toggleChk(id){chk[id]=!chk[id]; document.getElementById(id).classList.toggle('on',chk[id]); refreshApplyBtn();}
+function fmtTel(el){let v=el.value.replace(/\D/g,'').slice(0,11);if(v.length>=8)v=v.replace(/(\d{3})(\d{4})(\d{0,4})/,'$1-$2-$3').replace(/-$/,'');else if(v.length>=4)v=v.replace(/(\d{3})(\d{0,4})/,'$1-$2').replace(/-$/,'');el.value=v;refreshApplyBtn();}
+function refreshApplyBtn(){
+  const ok=document.getElementById('f-name').value.trim() && document.getElementById('f-tel').value.replace(/\D/g,'').length>=10
+    && pickedDays.size>0 && pickedTimes.size>0 && chk.chk1 && chk.chk2;
+  document.getElementById('applyBtn').disabled=!ok;
+}
+document.addEventListener('input',e=>{if(e.target&&e.target.id==='f-name')refreshApplyBtn();});
+
+/* 신청자 공유 저장소 — 같은 브라우저의 운영자 사이트에서 읽어요.
+   (실제 운영에서는 이 부분을 서버 API 저장으로 교체) */
+const APPLY_STORE_KEY='maeumgyeol_applicants_v1';
+function saveApplicant(rec){
+  try{
+    const raw=localStorage.getItem(APPLY_STORE_KEY);
+    const list=raw?JSON.parse(raw):[];
+    list.unshift(rec); // 최신 신청이 맨 위로
+    localStorage.setItem(APPLY_STORE_KEY, JSON.stringify(list));
+    return true;
+  }catch(e){ return false; }
+}
+
+function submitApply(){
+  const name=document.getElementById('f-name').value.trim();
+  const tel=document.getElementById('f-tel').value;
+  const days=[...pickedDays].sort().map(k=>ymdToLabel(k)).join(', ');
+  const daysFull=[...pickedDays].sort().map(k=>ymdToFull(k)).join(', ');
+  const times=[...pickedTimes].join(', ');
+
+  const rec={
+    name, tel,
+    pref: daysFull || '-',
+    times: times || '-',
+    agree: 1,
+    status: 'wait',           // 신규 신청은 '대기'
+    at: new Date().toISOString()
+  };
+
+  // 1순위: Firebase(Firestore) 저장 → 다른 기기·브라우저의 운영자 화면에서도 보임
+  // 2순위: 실패 시 localStorage (같은 브라우저 한정)
+  if(window.fbReady && window.fbSaveApplicant){
+    window.fbSaveApplicant(rec)
+      .catch(err=>{ console.warn('Firestore 저장 실패 — localStorage로 대체', err); saveApplicant(rec); });
+  }else{
+    saveApplicant(rec);
+  }
+
+  document.getElementById('recap').innerHTML=`
+    <div class="rr"><span class="k">이름</span><span class="v">${name}</span></div>
+    <div class="rr"><span class="k">연락처</span><span class="v">${tel}</span></div>
+    <div class="rr"><span class="k">가능 날짜</span><span class="v">${daysFull}</span></div>
+    <div class="rr"><span class="k">가능 시간</span><span class="v">${times}</span></div>`;
+  go('done');
+}
+
+/* ---------- share ---------- */
+/* 결과 공유 링크: 실제 배포 시 현재 페이지 주소를 사용하고,
+   파일(file://)로 열어 본 데모 환경에서는 안내용 기본 주소를 씁니다. */
+const SHARE_BASE='https://maeumgyeol.app';
+function resultUrl(){
+  try{
+    if(location && location.protocol && location.protocol.indexOf('http')===0){
+      // 배포 환경: 실제 페이지 주소 + 결과 식별자
+      return location.origin + location.pathname + '#r=' + encodeURIComponent(chosen.code||'SJ-204');
+    }
+  }catch(e){}
+  return SHARE_BASE + '/r/' + (chosen.code||'SJ-204');
+}
+function shareText(){
+  return '나의 마음결은 ‘'+chosen.name+'’ ✦ AI가 5분 대화로 읽어준 진짜 나. 너의 결도 궁금해 → '+resultUrl();
+}
+function isMobile(){return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);}
+
+/* 카카오 SDK: 앱키를 넣으면 진짜 카카오톡 공유가 작동합니다.
+   (https 도메인에 배포 + https://developers.kakao.com 에서 JavaScript 키 발급 후 아래에 입력)
+   키가 없으면 자동으로 '문구+링크 복사' 폴백으로 동작합니다. */
+const KAKAO_JS_KEY=''; // 예: 'a1b2c3d4...'
+function ensureKakao(cb){
+  if(!KAKAO_JS_KEY){ cb(false); return; }
+  if(window.Kakao && window.Kakao.isInitialized && window.Kakao.isInitialized()){ cb(true); return; }
+  if(window.Kakao){ try{window.Kakao.init(KAKAO_JS_KEY);}catch(e){} cb(window.Kakao.isInitialized()); return; }
+  const s=document.createElement('script');
+  s.src='https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js';
+  s.integrity='sha384-TiCUE00h649CAMonG018J2ujOgDKW/kVWlChEuu4jK2vxfAAD0eZxzCKakxg55G4';
+  s.crossOrigin='anonymous';
+  s.onload=()=>{ try{window.Kakao.init(KAKAO_JS_KEY);}catch(e){} cb(window.Kakao&&window.Kakao.isInitialized&&window.Kakao.isInitialized()); };
+  s.onerror=()=>cb(false);
+  document.head.appendChild(s);
+}
+
+function openShare(ch){
+  if(ch==='link'){
+    const url=resultUrl();
+    copyText(url)
+      .then(()=>toast('✦ 결과 링크를 복사했어요'))
+      .catch(()=>linkSheet('결과 링크 복사','아래 링크를 길게 눌러 복사하세요',url));
+    return;
+  }
+  if(ch==='kakao'){
+    const text=shareText();
+    const url=resultUrl();
+    // 1순위: 카카오 SDK(앱키 설정 시) → 실제 카카오톡 공유창
+    ensureKakao(function(ok){
+      if(ok && window.Kakao && window.Kakao.Share){
+        try{
+          window.Kakao.Share.sendDefault({
+            objectType:'feed',
+            content:{
+              title:'나의 마음결 — '+chosen.name,
+              description:'AI가 5분 대화로 읽어준 진짜 나. 너의 결도 궁금해 ✦',
+              imageUrl:SHARE_BASE+'/og.png',
+              link:{mobileWebUrl:url, webUrl:url}
+            },
+            buttons:[{title:'내 결과 보기', link:{mobileWebUrl:url, webUrl:url}}]
+          });
+          return;
+        }catch(e){/* fall through */}
+      }
+      // 2순위: 모바일 OS 공유 시트
+      if(navigator.share && isMobile()){
+        navigator.share({title:'마음결',text:text}).catch(()=>{});
+        return;
+      }
+      // 3순위: 문구+링크 복사 후 카카오톡에 붙여넣기 안내
+      copyText(text)
+        .then(()=>toast('✦ 공유 문구를 복사했어요 — 카카오톡에 붙여넣기 하세요'))
+        .catch(()=>linkSheet('카카오톡으로 공유','아래 문구를 복사해 카카오톡 대화창에 붙여넣으세요',text));
+    });
+    return;
+  }
+}
+
+/* 링크/문구 복사 안내 시트 */
+function linkSheet(title,desc,body){
+  const m=mkSheet();
+  m.innerHTML=sheetShell(`
+    <div style="${SHEET_TITLE}">${title}</div>
+    <div style="${SHEET_DESC}">${desc}</div>
+    <div id="sbox" style="${SHEET_BOX}">${body}</div>
+    <button id="cp" style="${SHEET_PRIMARY}">복사하기</button>
+    <button id="cl" style="${SHEET_GHOST}">닫기</button>
+  `);
+  document.getElementById('device').appendChild(m);
+  m.querySelector('#cp').onclick=()=>copyText(body).then(()=>{toast('✦ 복사됐어요');closeSheet(m);}).catch(()=>selectBox(m));
+  bindClose(m);
+}
+
+/* ---- sheet helpers ---- */
+const SHEET_TITLE="font-family:'Gowun Batang',serif;font-size:15px;text-align:center;margin-bottom:4px;color:#4A3A5C;";
+const SHEET_DESC="font-size:12px;color:#9A8BAA;text-align:center;margin-bottom:14px;";
+const SHEET_BOX="background:#fff;border:1px solid #EBDEEE;border-radius:13px;padding:14px;font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere;color:#5B4A6B;margin-bottom:14px;";
+const SHEET_PRIMARY="width:100%;padding:13px;border:none;border-radius:13px;background:linear-gradient(100deg,#EBA6CC,#A87EDB);color:#fff;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px;";
+const SHEET_GHOST_SOLID="width:100%;padding:12px;border:1.5px solid #EBDEEE;border-radius:13px;background:#fff;color:#9B5FC4;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px;";
+const SHEET_GHOST="width:100%;padding:11px;border:none;border-radius:13px;background:transparent;color:#9A8BAA;font-size:13px;cursor:pointer;";
+function mkSheet(){let m=document.getElementById('sheet');if(m)m.remove();
+  m=document.createElement('div');m.id='sheet';
+  m.style.cssText='position:absolute;inset:0;background:rgba(80,50,110,.4);display:flex;align-items:flex-end;justify-content:center;z-index:200;';
+  return m;}
+function sheetShell(inner){return `<div style="width:100%;max-width:412px;background:#FBF4FB;border-radius:24px 24px 0 0;padding:22px 20px 26px;">
+  <div style="width:38px;height:4px;background:#EBDEF0;border-radius:2px;margin:0 auto 16px;"></div>${inner}</div>`;}
+function closeSheet(m){m.remove();}
+function bindClose(m){const cl=m.querySelector('#cl');if(cl)cl.onclick=()=>m.remove();m.onclick=e=>{if(e.target===m)m.remove();};}
+function selectBox(m){const box=m.querySelector('#sbox');if(!box)return;const r=document.createRange();r.selectNodeContents(box);const s=window.getSelection();s.removeAllRanges();s.addRange(r);toast('길게 눌러 복사해 주세요');}
+
+function copyText(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText){return navigator.clipboard.writeText(t);}
+  return new Promise((res,rej)=>{
+    const ta=document.createElement('textarea');ta.value=t;
+    ta.style.cssText='position:fixed;top:0;left:0;opacity:0;';
+    document.body.appendChild(ta);ta.focus();ta.select();
+    let ok=false;try{ok=document.execCommand('copy');}catch(e){}
+    document.body.removeChild(ta);ok?res():rej();
+  });
+}
+
+/* ---------- toast ---------- */
+let tt;function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.opacity='1';t.style.transform='translateX(-50%) translateY(0)';clearTimeout(tt);tt=setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(-50%) translateY(20px)';},2400);}
+</script>
+
+</body>
+</html>
