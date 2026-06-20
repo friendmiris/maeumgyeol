@@ -1061,12 +1061,12 @@ function siteOrigin(){
   }catch(e){}
   return SHARE_BASE;
 }
-function shareImage(){ return siteOrigin() + '/og.png'; } // 공유 썸네일
+function shareImage(){ return siteOrigin() + '/og2.png'; } // 공유 썸네일
 function resultUrl(){
   try{
     if(location && location.protocol && location.protocol.indexOf('http')===0){
       // 배포 환경: 실제 페이지 주소 + 결과 식별자
-      return location.origin + location.pathname + '#r=' + encodeURIComponent(chosen.code||'SJ-204');
+      return location.origin + location.pathname + '?r=' + encodeURIComponent(chosen.code||'SJ-204') + '&v=2';
     }
   }catch(e){}
   return SHARE_BASE + '/r/' + (chosen.code||'SJ-204');
