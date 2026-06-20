@@ -1060,15 +1060,13 @@ function isMobile(){return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
 /* 카카오 SDK: 앱키를 넣으면 진짜 카카오톡 공유가 작동합니다.
    (https 도메인에 배포 + https://developers.kakao.com 에서 JavaScript 키 발급 후 아래에 입력)
    키가 없으면 자동으로 '문구+링크 복사' 폴백으로 동작합니다. */
-const KAKAO_JS_KEY=''; // 예: 'a1b2c3d4...'
+const KAKAO_JS_KEY='626f7c50530f687670009a34051eb19e'; // 카카오 developers > 앱 > 플랫폼 키 > JavaScript 키
 function ensureKakao(cb){
   if(!KAKAO_JS_KEY){ cb(false); return; }
   if(window.Kakao && window.Kakao.isInitialized && window.Kakao.isInitialized()){ cb(true); return; }
   if(window.Kakao){ try{window.Kakao.init(KAKAO_JS_KEY);}catch(e){} cb(window.Kakao.isInitialized()); return; }
   const s=document.createElement('script');
   s.src='https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js';
-  s.integrity='sha384-TiCUE00h649CAMonG018J2ujOgDKW/kVWlChEuu4jK2vxfAAD0eZxzCKakxg55G4';
-  s.crossOrigin='anonymous';
   s.onload=()=>{ try{window.Kakao.init(KAKAO_JS_KEY);}catch(e){} cb(window.Kakao&&window.Kakao.isInitialized&&window.Kakao.isInitialized()); };
   s.onerror=()=>cb(false);
   document.head.appendChild(s);
