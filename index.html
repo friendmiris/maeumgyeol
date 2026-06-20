@@ -4,6 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>마음결 · AI 대화 성향 분석</title>
+<!-- 공유 미리보기(오픈그래프) — 카카오톡·문자·SNS 링크에 썸네일 표시 -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="나의 마음결 분석 테스트">
+<meta property="og:description" content="AI와 5분 대화로 알아보는 진짜 나. 내 결과를 확인해보세요 ✦">
+<meta property="og:image" content="https://maeumgyeol-three.vercel.app/og.png">
+<meta property="og:url" content="https://maeumgyeol-three.vercel.app">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="나의 마음결 분석 테스트">
+<meta name="twitter:description" content="AI와 5분 대화로 알아보는 진짜 나 ✦">
+<meta name="twitter:image" content="https://maeumgyeol-three.vercel.app/og.png">
 <style>
   @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css');
   @import url('https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap');
@@ -1042,7 +1052,16 @@ function submitApply(){
 /* ---------- share ---------- */
 /* 결과 공유 링크: 실제 배포 시 현재 페이지 주소를 사용하고,
    파일(file://)로 열어 본 데모 환경에서는 안내용 기본 주소를 씁니다. */
-const SHARE_BASE='https://maeumgyeol.app';
+const SHARE_BASE='https://maeumgyeol-three.vercel.app';
+function siteOrigin(){
+  try{
+    if(location && location.protocol && location.protocol.indexOf('http')===0){
+      return location.origin;
+    }
+  }catch(e){}
+  return SHARE_BASE;
+}
+function shareImage(){ return siteOrigin() + '/og.png'; } // 공유 썸네일
 function resultUrl(){
   try{
     if(location && location.protocol && location.protocol.indexOf('http')===0){
@@ -1090,12 +1109,12 @@ function openShare(ch){
           window.Kakao.Share.sendDefault({
             objectType:'feed',
             content:{
-              title:'나의 마음결 — '+chosen.name,
-              description:'AI가 5분 대화로 읽어준 진짜 나. 너의 결도 궁금해 ✦',
-              imageUrl:SHARE_BASE+'/og.png',
+              title:'나의 마음결 분석 테스트',
+              description:'AI와 5분 대화로 알아보는 진짜 나. 내 결과를 확인해보세요 ✦',
+              imageUrl:shareImage(),
               link:{mobileWebUrl:url, webUrl:url}
             },
-            buttons:[{title:'내 결과 보기', link:{mobileWebUrl:url, webUrl:url}}]
+            buttons:[{title:'나도 테스트하기', link:{mobileWebUrl:url, webUrl:url}}]
           });
           return;
         }catch(e){/* fall through */}
