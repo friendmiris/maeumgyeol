@@ -8,7 +8,7 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="나의 마음결 분석 테스트">
 <meta property="og:description" content="AI와 5분 대화로 알아보는 진짜 나. 내 결과를 확인해보세요 ✦">
-<meta property="og:image" content="https://maeumgyeol-three.vercel.app/og2.png">
+<meta property="og:image" content="https://maeumgyeol-three.vercel.app/og.png">
 <meta property="og:url" content="https://maeumgyeol-three.vercel.app">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="나의 마음결 분석 테스트">
@@ -81,6 +81,38 @@
     .device{height:auto; min-height:calc(100vh - 44px); overflow:visible;}
     .screen.active{overflow:visible;}
     .screen[data-screen="chat"].active{min-height:calc(100vh - 44px); overflow:hidden;}
+  }
+
+  /* ===== 태블릿 (768~1023px): 콘텐츠 영역 넓게 ===== */
+  @media (min-width:768px){
+    body{padding:30px 16px 50px;}
+    .device{max-width:560px; height:min(880px, calc(100vh - 90px));}
+    /* 신청 폼: 이름/전화 2열 */
+    .device[data-screen-active="apply"]{max-width:680px;}
+    .device[data-screen-active="apply"] .form{
+      display:grid; grid-template-columns:1fr 1fr; gap:0 18px; align-items:start;
+    }
+    .device[data-screen-active="apply"] .form .field{margin-bottom:18px;}
+    .device[data-screen-active="apply"] .form .f-full{grid-column:1 / -1;}
+    .slots{grid-template-columns:repeat(3,1fr);}
+    /* 시간대 6개를 더 시원하게 */
+    .ses-info{grid-template-columns:repeat(4,1fr);}
+  }
+
+  /* ===== PC (1024px 이상): 화면 성격별 최적폭 ===== */
+  @media (min-width:1024px){
+    body{padding:40px 24px 60px;}
+    .device{max-width:640px; height:min(900px, calc(100vh - 80px));}
+    /* 신청 폼은 더 넓게 (2열 그리드 활용) */
+    .device[data-screen-active="apply"]{max-width:880px;}
+    .device[data-screen-active="apply"] .form{grid-template-columns:1fr 1fr; gap:0 26px;}
+    .device[data-screen-active="apply"] .slots{grid-template-columns:repeat(6,1fr);}
+    /* 결과 서사 텍스트 줄 길이 가독성 유지 */
+    .device[data-screen-active="result"] .narr{font-size:14.5px;}
+  }
+  @media (min-width:1280px){
+    .device{max-width:680px;}
+    .device[data-screen-active="apply"]{max-width:920px;}
   }
 
   button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit;}
@@ -638,15 +670,15 @@
       <p>당첨자에게만 개별 연락드려요 ✨</p>
     </div>
     <div class="form">
-      <div class="field">
+      <div class="field f-half">
         <label>이름</label>
         <input class="inp" id="f-name" placeholder="실명을 입력해 주세요">
       </div>
-      <div class="field">
+      <div class="field f-half">
         <label>휴대폰 번호</label>
         <input class="inp" id="f-tel" inputmode="numeric" placeholder="010-0000-0000" oninput="fmtTel(this)">
       </div>
-      <div class="field">
+      <div class="field f-full">
         <label>🗓 가능한 날짜 <span class="multi">여러 개 선택</span></label>
         <div class="cal-head">
           <button type="button" class="cal-nav" id="calPrev" onclick="calMove(-1)" aria-label="이전 달">‹</button>
@@ -656,15 +688,15 @@
         <div class="cal" id="cal"></div>
         <div class="cal-picked" id="calPicked"></div>
       </div>
-      <div class="field">
+      <div class="field f-full">
         <label>⏰ 가능한 시간대 <span class="multi">여러 개 선택</span></label>
         <div class="slots" id="slots"></div>
       </div>
-      <label class="check" id="chk1" onclick="toggleChk('chk1')">
+      <label class="check f-full" id="chk1" onclick="toggleChk('chk1')">
         <span class="box">✓</span>
         <span class="ct">개인정보(이름·연락처) 수집 및 당첨 안내 연락에 동의합니다. <span class="req">(필수)</span></span>
       </label>
-      <label class="check" id="chk2" onclick="toggleChk('chk2')">
+      <label class="check f-full" id="chk2" onclick="toggleChk('chk2')">
         <span class="box">✓</span>
         <span class="ct">본 퍼실리테이션은 자기이해·성장을 돕는 코칭 콘텐츠이며, 의학적 진단·치료가 아님을 이해했습니다. <span class="req">(필수)</span></span>
       </label>
@@ -782,9 +814,11 @@
 
 /* ---------- navigation ---------- */
 const device=document.getElementById('device');
+device.setAttribute('data-screen-active','landing'); // 초기 화면
 const navMap={landing:0,chat:1,loading:2,result:3,session:4,apply:5,share:6};
 function go(name, btn){
   document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active', s.dataset.screen===name));
+  device.setAttribute('data-screen-active', name);   // 반응형 폭 제어용
   document.querySelectorAll('.demo-nav button').forEach(b=>b.classList.remove('on'));
   if(btn) btn.classList.add('on');
   else{ const nb=document.querySelectorAll('.demo-nav button')[navMap[name]]; if(nb) nb.classList.add('on'); }
@@ -1061,12 +1095,12 @@ function siteOrigin(){
   }catch(e){}
   return SHARE_BASE;
 }
-function shareImage(){ return siteOrigin() + '/og2.png'; } // 공유 썸네일
+function shareImage(){ return siteOrigin() + '/og.png'; } // 공유 썸네일
 function resultUrl(){
   try{
     if(location && location.protocol && location.protocol.indexOf('http')===0){
       // 배포 환경: 실제 페이지 주소 + 결과 식별자
-      return location.origin + location.pathname + '?r=' + encodeURIComponent(chosen.code||'SJ-204') + '&v=2';
+      return location.origin + location.pathname + '#r=' + encodeURIComponent(chosen.code||'SJ-204');
     }
   }catch(e){}
   return SHARE_BASE + '/r/' + (chosen.code||'SJ-204');
