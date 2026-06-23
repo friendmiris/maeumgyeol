@@ -99,20 +99,24 @@
     .ses-info{grid-template-columns:repeat(4,1fr);}
   }
 
-  /* ===== PC (1024px 이상): 화면 성격별 최적폭 ===== */
+  /* ===== PC (1024px 이상): 프레임 전체 확대 + 화면 성격별 최적폭 ===== */
   @media (min-width:1024px){
     body{padding:40px 24px 60px;}
-    .device{max-width:640px; height:min(900px, calc(100vh - 80px));}
+    /* 프레임 전체를 1.3배 확대 — 글씨·버튼·입력창·여백이 비율 그대로 시원하게 */
+    .device{zoom:1.3; max-width:560px; height:min(720px, calc((100vh - 80px) / 1.3));}
     /* 신청 폼은 더 넓게 (2열 그리드 활용) */
-    .device[data-screen-active="apply"]{max-width:880px;}
+    .device[data-screen-active="apply"]{max-width:720px;}
     .device[data-screen-active="apply"] .form{grid-template-columns:1fr 1fr; gap:0 26px;}
     .device[data-screen-active="apply"] .slots{grid-template-columns:repeat(6,1fr);}
     /* 결과 서사 텍스트 줄 길이 가독성 유지 */
     .device[data-screen-active="result"] .narr{font-size:18.12px;}
   }
   @media (min-width:1280px){
-    .device{max-width:680px;}
-    .device[data-screen-active="apply"]{max-width:920px;}
+    .device{zoom:1.35; max-width:580px;}
+    .device[data-screen-active="apply"]{max-width:740px;}
+  }
+  @media (min-width:1600px){
+    .device{zoom:1.45;}
   }
 
   button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit;}
@@ -274,6 +278,23 @@
     font-size:16.25px; font-weight:700; margin-bottom:6px; display:flex; align-items:center; justify-content:center; gap:7px;
     box-shadow:0 10px 22px -10px rgba(176,110,210,.6);}
 
+  /* ===== 블러 잠금 콘텐츠 ===== */
+  .locked-card{position:relative; border-radius:18px; overflow:hidden; border:1px solid var(--line);}
+  .locked-list{padding:16px; filter:blur(5px); user-select:none; pointer-events:none; opacity:.75;}
+  .lrow{display:flex; gap:13px; padding:12px 4px;}
+  .lrow .lic{width:42px; height:42px; border-radius:13px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:20px;}
+  .lrow .lh{font-size:16.25px; font-weight:700; color:var(--ink-strong); margin-bottom:4px;}
+  .lrow .lb{font-size:14px; color:var(--ink); opacity:.85; line-height:1.7;}
+  .locked-overlay{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:24px 22px; gap:8px;
+    background:linear-gradient(180deg, rgba(251,244,251,.55) 0%, rgba(251,244,251,.88) 45%, rgba(251,244,251,.97) 100%);}
+  .locked-overlay .lock-ic{width:52px; height:52px; border-radius:16px; background:linear-gradient(135deg,#EFE0F0,#E0D2F2);
+    border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:24px; margin-bottom:4px;}
+  .locked-overlay .lock-t{font-size:19px; font-weight:700; color:var(--ink-strong);}
+  .locked-overlay .lock-d{font-size:14.5px; color:var(--ink); opacity:.9; line-height:1.75; margin-bottom:6px;}
+  .locked-overlay .lock-d b{color:var(--grape-deep); font-weight:700;}
+  .locked-overlay .lock-note{font-size:12px; color:var(--faint); margin-top:8px;}
+
   .sit{display:flex; gap:13px; padding:15px; background:var(--paper); border:1px solid var(--line); border-radius:16px; margin-bottom:11px;}
   .sit .ic{width:42px; height:42px; border-radius:13px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:25px;}
   .sit .h{font-size:16.88px; font-weight:600; color:var(--ink-strong); margin-bottom:5px;}
@@ -336,6 +357,19 @@
     border:1px solid var(--line);}
   .ses-quote .qt{font-family:'Gowun Batang',serif; font-size:16.88px; color:var(--ink-strong); line-height:1.8;}
   .ses-quote .qw{font-size:13.75px; color:var(--muted); margin-top:9px;}
+  /* ===== 참여자 후기 ===== */
+  .reviews{padding:14px 20px 4px; display:flex; flex-direction:column; gap:12px;}
+  .rv{background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:16px 17px;
+    box-shadow:0 4px 14px -10px rgba(150,110,180,.3);}
+  .rv-stars{color:#F0B84A; font-size:13px; letter-spacing:2px; margin-bottom:9px;}
+  .rv-body{font-size:14.5px; color:var(--ink); line-height:1.85; letter-spacing:-.1px;}
+  .rv-body b{color:var(--grape-deep); font-weight:600;}
+  .rv-who{display:flex; align-items:center; gap:10px; margin-top:13px; padding-top:13px; border-top:1px solid var(--line2);
+    font-size:12.5px; color:var(--muted); line-height:1.5;}
+  .rv-who b{color:var(--ink-strong); font-size:13.5px;}
+  .rv-who .rv-meta{font-size:11.5px; color:var(--faint);}
+  .rv-av{width:34px; height:34px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    color:#fff; font-weight:700; font-size:14px; font-family:'Gowun Batang',serif;}
 
   /* ============ APPLY FORM ============ */
   .apply-hero{padding:26px 24px 20px; text-align:center; position:relative;
@@ -352,25 +386,25 @@
     font-size:17.5px; color:var(--ink-strong); outline:none; transition:border .2s, box-shadow .2s;}
   .inp::placeholder{color:var(--faint);}
   .inp:focus{border-color:var(--grape); box-shadow:0 0 0 4px rgba(176,110,210,.12);}
-  .cal{display:grid; grid-template-columns:repeat(7,1fr); gap:6px;}
-  .cal-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;}
+  .cal{display:grid; grid-template-columns:repeat(7,1fr); gap:5px;}
+  .cal-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;}
   .cal-title{font-family:'Gowun Batang',serif; font-size:18.75px; font-weight:700; color:var(--ink-strong);}
   .cal-nav{width:34px; height:34px; border-radius:10px; border:1.5px solid var(--line); background:var(--paper);
     color:var(--grape-deep); font-size:22.5px; line-height:1; display:flex; align-items:center; justify-content:center; transition:all .14s;}
   .cal-nav:hover:not(:disabled){border-color:var(--grape); background:rgba(176,110,210,.06);}
   .cal-nav:disabled{opacity:.32; cursor:not-allowed;}
-  .cal .dow{font-size:13.12px; color:var(--faint); text-align:center; padding-bottom:2px;}
-  .cal .day{aspect-ratio:1/1; border-radius:12px; border:1.5px solid var(--line); background:var(--paper);
-    display:flex; align-items:center; justify-content:center; font-size:16.25px; color:var(--ink); transition:all .14s; position:relative;}
+  .cal .dow{font-size:12px; color:var(--faint); text-align:center; padding-bottom:1px;}
+  .cal .day{aspect-ratio:1/0.72; border-radius:11px; border:1.5px solid var(--line); background:var(--paper);
+    display:flex; align-items:center; justify-content:center; font-size:15.5px; color:var(--ink); transition:all .14s; position:relative;}
   .cal .day.empty{border:none; background:transparent; pointer-events:none;}
   .cal .day:hover:not(.empty):not(.disabled){border-color:var(--grape);}
   .cal .day.on{background:var(--grad); color:#fff; border-color:transparent; font-weight:700; box-shadow:0 6px 14px -6px rgba(176,110,210,.6);}
   .cal .day.dow-sun{color:var(--pink-deep);}
   .cal .day.disabled{color:var(--faint); opacity:.4; pointer-events:none; background:transparent; border-color:transparent;}
   .cal .day.today:not(.on){box-shadow:inset 0 0 0 1.5px var(--grape);}
-  .cal .day.today:not(.on):after{content:''; position:absolute; bottom:5px; left:50%; transform:translateX(-50%);
+  .cal .day.today:not(.on):after{content:''; position:absolute; bottom:4px; left:50%; transform:translateX(-50%);
     width:4px; height:4px; border-radius:50%; background:var(--grape);}
-  .cal-picked{display:flex; flex-wrap:wrap; gap:6px; margin-top:12px;}
+  .cal-picked{display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;}
   .cal-picked .chip{font-size:13.75px; color:var(--grape-deep); background:#F3E6F4; border:1px solid #EBD6EF;
     padding:5px 10px; border-radius:50px; display:inline-flex; align-items:center; gap:6px;}
   .cal-picked .chip b{font-weight:600;}
@@ -569,20 +603,30 @@
         <div id="scoreList"></div>
       </div>
       <div class="sec">
-        <div class="sec-label"><span class="no">3</span><span class="tt serif">내 감각에 맞게 조정</span><span class="en">tune</span></div>
-        <div class="adjust-card">
-          <div class="adjust-intro">AI가 읽은 점수가 실제 나와 조금 다르다면, <b>직접 움직여 보정</b>할 수 있어요. 슬라이더를 옮긴 뒤 버튼을 누르면 그래프가 다시 계산돼요.</div>
-          <div id="slotList"></div>
-          <button class="recalc" onclick="recalc()">✦ 보정값으로 다시 해석하기</button>
-        </div>
-      </div>
-      <div class="sec">
-        <div class="sec-label"><span class="no">4</span><span class="tt serif">이런 순간의 당신</span><span class="en">in context</span></div>
+        <div class="sec-label"><span class="no">3</span><span class="tt serif">이런 순간의 당신</span><span class="en">in context</span></div>
         <div id="sitList"></div>
       </div>
       <div class="sec">
-        <div class="sec-label"><span class="no">5</span><span class="tt serif">결을 더 살리는 법</span><span class="en">grow</span></div>
+        <div class="sec-label"><span class="no">4</span><span class="tt serif">결을 더 살리는 법</span><span class="en">grow</span></div>
         <div id="growList"></div>
+      </div>
+      <div class="sec">
+        <div class="sec-label"><span class="no">5</span><span class="tt serif">더 깊은 나의 결 지도</span><span class="en">locked</span></div>
+        <div class="locked-card">
+          <div class="locked-list" aria-hidden="true">
+            <div class="lrow"><span class="lic" style="background:#F6E7EF">💗</span><div><div class="lh">연애할 때의 나</div><div class="lb">끌리는 사람의 유형, 갈등이 생겼을 때 반복되는 나의 패턴, 그리고 관계가 깊어지는 방식까지.</div></div></div>
+            <div class="lrow"><span class="lic" style="background:#E7F2EC">🧑‍💼</span><div><div class="lh">직장 상사와의 관계</div><div class="lb">윗사람 앞에서 위축되는지 당당한지, 인정받고 싶은 욕구가 어디서 작동하는지.</div></div></div>
+            <div class="lrow"><span class="lic" style="background:#F3E3F0">👪</span><div><div class="lh">가족 안에서의 나</div><div class="lb">가장 솔직해지는 관계에서 드러나는 결, 그리고 어린 시절부터 이어진 패턴.</div></div></div>
+            <div class="lrow"><span class="lic" style="background:#F6F0DD">🌙</span><div><div class="lh">지친 날, 나를 회복시키는 법</div><div class="lb">당신의 에너지가 어떻게 채워지고 비워지는지, 번아웃을 막는 나만의 리듬.</div></div></div>
+          </div>
+          <div class="locked-overlay">
+            <div class="lock-ic">🔒</div>
+            <div class="lock-t serif">아직 잠겨 있는 분석이 있어요</div>
+            <div class="lock-d">연애·가족·직장 속 나의 결까지,<br>더 깊은 이야기는 <b>퍼실리테이션</b>에서 함께 풀어봐요.</div>
+            <button class="cta" style="max-width:300px;margin:4px auto 0" onclick="go('session')">신청하고 전체 분석 열어보기</button>
+            <div class="lock-note">신청자 중 선정 시 개별 안내 · 소수 인원</div>
+          </div>
+        </div>
       </div>
     </div>
     <div class="r-foot">
@@ -645,9 +689,28 @@
       <div class="ich"><div class="il">코칭</div><div class="iv">4주 성장 코칭</div></div>
     </div>
 
-    <div class="ses-quote">
-      <div class="qt">“테스트만 봤을 땐 ‘맞네’ 하고 넘겼는데, 퍼실리테이션에서 제 반복 패턴을 지도로 보니 그제야 납득됐어요. 추천받은 책이랑 토론 모임이 진짜 도움 됐어요.”</div>
-      <div class="qw">— 30대 직장인 지현 님, 4월 회차 참여</div>
+    <div class="ses-sechead"><span class="sno">3</span><span class="stt">참여자 후기</span></div>
+    <div class="reviews">
+      <div class="rv">
+        <div class="rv-stars">★★★★★</div>
+        <div class="rv-body">“테스트 결과만 봤을 땐 ‘대충 맞네’ 하고 넘겼어요. 그런데 퍼실리테이션에서 제가 회의 때마다 말을 아끼는 이유, 연애에서 늘 같은 지점에서 멈추는 패턴을 <b>한 장의 지도로</b> 보여주시는데 소름이 돋았어요. ‘아 내가 이래서 그랬구나’가 처음으로 납득됐어요. 추천받은 책 3권 중 한 권은 지금도 밑줄 그으며 읽고 있어요.”</div>
+        <div class="rv-who"><span class="rv-av" style="background:#E59CC4">김</span><div><b>김ㅇ현</b> 님 · 32세 마케터<br><span class="rv-meta">4월 회차 · 오프라인 참여</span></div></div>
+      </div>
+      <div class="rv">
+        <div class="rv-stars">★★★★★</div>
+        <div class="rv-body">“혼자 자기계발서 100권 읽는 것보다 이 60분이 나았어요. 막연하게 ‘나는 내향적인가?’ 정도로만 알았는데, 직장 상사 앞에서 위축되는 진짜 이유가 <b>완벽주의에서 온 거였다는 걸</b> 짚어주셨어요. 그날 받은 ‘결 리포트 PDF’를 캡처해서 친구한테 자랑했어요. 소그룹 토론에서 정반대 성향인 분 얘기 듣는 것도 신선했고요.”</div>
+        <div class="rv-who"><span class="rv-av" style="background:#B27CD6">이</span><div><b>이ㅇ서</b> 님 · 29세 개발자<br><span class="rv-meta">3월 회차 · 온라인 참여</span></div></div>
+      </div>
+      <div class="rv">
+        <div class="rv-stars">★★★★★</div>
+        <div class="rv-body">“상담이나 검사 같은 건 부담스러웠는데, 여긴 ‘진단’이 아니라 <b>함께 나를 읽어주는</b> 느낌이라 편했어요. 가족 안에서의 제 모습 파트가 특히 와닿았어요. 어릴 때부터 반복된 패턴을 알게 되니까, 요즘은 엄마랑 통화할 때 덜 욱하게 됐어요. 4주 코칭으로 계속 점검받는 것도 든든하고요.”</div>
+        <div class="rv-who"><span class="rv-av" style="background:#A8D8C8">박</span><div><b>박ㅇ림</b> 님 · 35세 디자이너<br><span class="rv-meta">4월 회차 · 오프라인 참여</span></div></div>
+      </div>
+      <div class="rv">
+        <div class="rv-stars">★★★★★</div>
+        <div class="rv-body">“솔직히 반신반의하면서 신청했어요. 근데 끝나고 나올 때 <b>‘나를 설명할 수 있는 언어가 생겼다’</b>는 느낌이 들었어요. 지친 날 회복하는 저만의 방식까지 정리해주셔서, 번아웃이 올 것 같으면 그 리포트를 다시 꺼내봐요. 멤버 전용 강연도 매번 챙겨 듣고 있어요.”</div>
+        <div class="rv-who"><span class="rv-av" style="background:#C9A8E8">정</span><div><b>정ㅇ우</b> 님 · 27세 대학원생<br><span class="rv-meta">2월 회차 · 온라인 참여</span></div></div>
+      </div>
     </div>
 
     <div class="ses-note" style="margin:16px 20px 0;">
@@ -918,11 +981,6 @@ function renderResult(){
       <div class="score-rail"><i data-w="${d.v}" style="background:${d.color}"></i></div>
       <div class="score-meta">${d.meta}</div></div>`).join('');
   requestAnimationFrame(()=>setTimeout(()=>{document.querySelectorAll('#scoreList .score-rail>i').forEach(s=>s.style.width=s.dataset.w+'%');},120));
-  document.getElementById('slotList').innerHTML=dims.map(d=>`
-    <div class="slot"><div class="slot-top"><div class="slot-nm">${d.nm}<span class="d">${d.sub}</span></div>
-      <div class="slot-val" id="sv-${d.key}">${d.v}</div></div>
-      <input type="range" min="0" max="100" value="${d.v}" data-key="${d.key}" oninput="onSlide(this)"></div>`).join('');
-  document.querySelectorAll('#slotList input[type=range]').forEach(paintRange);
   const sits=[
     {ic:'💼',bg:'#F3E3F0',h:'직장 — 새 프로젝트가 떨어졌을 때',b:'남들이 바로 손대는 동안, 당신은 먼저 구조를 그려요. 처음 며칠은 “아직 시작 안 했어?” 소리를 들을 수도. 하지만 중반부터 흔들리지 않는 사람이 당신이고, 마감 앞에서 무너지지 않는 것도 당신이에요.'},
     {ic:'💗',bg:'#F6E7EF',h:'연애 — 갈등이 생겼을 때',b:'서운한 일이 있어도 그 자리에서 바로 쏟아내기보다 혼자 곱씹는 편. 상대는 가끔 “말을 안 해주니 답답하다”고 느낄 수 있어요. 가끔은 <b>정리 중이라는 사실 자체를</b> 알려주는 것만으로 관계가 한결 편해져요.'},
@@ -935,15 +993,6 @@ function renderResult(){
     {n:'3',h:'연결의 폭을 의식적으로 넓히기',b:'깊이는 이미 충분해요. 한 달에 한 번, 평소 안 만나던 분야의 사람과 대화해보면 기회의 결이 넓어져요.',try:'다른 직무·분야의 사람에게 커피챗 먼저 제안하기'}
   ];
   document.getElementById('growList').innerHTML=grows.map(g=>`<div class="grow"><div class="n serif">${g.n}</div><div><div class="gh">${g.h}</div><div class="gb">${g.b}</div><div class="try">✦ 실천 — ${g.try}</div></div></div>`).join('');
-}
-function paintRange(el){el.style.background=`linear-gradient(90deg,var(--grape) 0%,var(--grape) ${el.value}%,#EBDEF0 ${el.value}%)`;}
-function onSlide(el){paintRange(el);document.getElementById('sv-'+el.dataset.key).textContent=el.value;}
-function recalc(){
-  document.querySelectorAll('#slotList input[type=range]').forEach(el=>{dims.find(x=>x.key===el.dataset.key).v=parseInt(el.value,10);});
-  document.querySelectorAll('#scoreList .score').forEach((b,i)=>{b.querySelector('.score-rail>i').style.width=dims[i].v+'%';b.querySelector('.score-vv').textContent=dims[i].v;});
-  const top=[...dims].sort((a,b)=>b.v-a.v)[0];
-  toast('보정값으로 다시 해석했어요 ✦ 가장 강한 결: '+top.nm);
-  const sc=document.getElementById('scoreList');if(sc)sc.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 /* ---------- apply form ---------- */
